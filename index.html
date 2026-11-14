@@ -1,0 +1,3411 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>StudyOS — Private Engineering Study Workspace</title>
+
+    <!-- PWA & Mobile Native Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="StudyOS">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#09090B">
+    <meta name="description" content="Private, distraction-free Dark Mode mobile study workspace for engineering students.">
+
+    <!-- Inline Web App Manifest -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"StudyOS","short_name":"StudyOS","start_url":".","display":"standalone","background_color":"#09090B","theme_color":"#6366F1","icons":[{"src":"https://placehold.co/192x192/111318/6366F1?text=OS","sizes":"192x192","type":"image/png"}]}'>
+
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: {
+                            bg: '#09090B',
+                            card: '#111318',
+                            elevated: '#1E222B',
+                            border: '#1E222B',
+                            text: '#F3F4F6',
+                            muted: '#8B92A5',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* =========================================================
+           OBSIDIAN DARK MODE, PRIVACY LOCK & MOBILE INTERACTIONS
+           ========================================================= */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            background-color: #050507;
+            color: #F3F4F6;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overscroll-behavior-y: none;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .obsidian-scroll::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .obsidian-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .obsidian-scroll::-webkit-scrollbar-thumb {
+            background: #272B36;
+            border-radius: 9999px;
+        }
+
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .pt-safe {
+            padding-top: max(0.75rem, env(safe-area-inset-top));
+        }
+        .pb-safe {
+            padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+        }
+
+        @keyframes sheetSlideUp {
+            from { transform: translateY(100%); opacity: 0.7; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.96); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes pinShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-sheet-up {
+            animation: sheetSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-modal-pop {
+            animation: modalPop 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-shake {
+            animation: pinShake 0.34s ease-in-out;
+        }
+
+        /* 3D Flashcard Flip Mechanics */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+            transform-style: preserve-3d;
+        }
+        .flip-card-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .flip-card-face {
+            position: absolute;
+            inset: 0;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+    <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
+</script>
+</head>
+<body class="min-h-[100dvh] flex items-center justify-center sm:p-4 bg-[#050507] text-[#F3F4F6] antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Subtle Ambient Desktop Glow -->
+    <div class="hidden sm:block fixed inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute top-[-15%] left-[15%] w-[420px] h-[420px] rounded-full bg-indigo-600/[0.06] blur-3xl"></div>
+        <div class="absolute bottom-[-15%] right-[15%] w-[420px] h-[420px] rounded-full bg-sky-500/[0.05] blur-3xl"></div>
+    </div>
+
+    <!-- Responsive Mobile App Shell -->
+    <div id="app-shell" class="relative w-full sm:max-w-[440px] h-[100dvh] sm:h-[870px] sm:max-h-[94dvh] bg-[#09090B] sm:rounded-[2.5rem] sm:border sm:border-[#1E222B] sm:shadow-[0_24px_80px_rgba(0,0,0,0.88)] flex flex-col overflow-hidden">
+
+        <!-- =========================================================
+             LAYER A: PRIVACY GATE / LOGIN SCREEN (SHOWN FIRST)
+             ========================================================= -->
+        <div id="auth-gate" class="absolute inset-0 z-40 bg-[#09090B] flex flex-col justify-between p-6 pt-safe pb-safe overflow-y-auto obsidian-scroll">
+            <!-- Auth Gate content injected dynamically -->
+        </div>
+
+        <!-- =========================================================
+             LAYER B: FROSTED-DARK 4-DIGIT PIN APP LOCK SCREEN
+             ========================================================= -->
+        <div id="lock-screen" class="hidden absolute inset-0 z-50 bg-[#09090B]/95 backdrop-blur-2xl flex flex-col justify-between p-6 pt-safe pb-safe">
+            <!-- Lock Screen keypad injected dynamically -->
+        </div>
+
+        <!-- =========================================================
+             LAYER C: AUTHENTICATED PRIVATE WORKSPACE
+             ========================================================= -->
+        <div id="workspace-shell" class="hidden flex-1 flex flex-col h-full overflow-hidden">
+            <!-- Dynamic Top App Header -->
+            <header id="app-header" class="pt-safe px-5 pb-3 bg-[#09090B]/95 backdrop-blur-xl border-b border-[#1E222B] z-20 shrink-0"></header>
+
+            <!-- Main Scrollable Content Viewport -->
+            <main id="main-viewport" class="flex-1 overflow-y-auto obsidian-scroll px-5 pt-4 pb-24 space-y-4"></main>
+
+            <!-- Minimal 3-Tab Bottom Navigation Bar -->
+            <nav class="pb-safe px-4 pt-2 bg-[#09090B]/95 backdrop-blur-xl border-t border-[#1E222B] z-20 shrink-0">
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="switchMainTab('modules')" data-nav="modules" class="nav-btn flex flex-col items-center justify-center py-2 px-2 rounded-2xl transition-all active:scale-95 bg-indigo-500/15 text-indigo-400">
+                        <i data-lucide="layers" class="w-5 h-5 mb-0.5"></i>
+                        <span class="text-[11px] font-bold tracking-tight">Modules</span>
+                    </button>
+
+                    <button onclick="switchMainTab('tasks')" data-nav="tasks" class="nav-btn flex flex-col items-center justify-center py-2 px-2 rounded-2xl transition-all active:scale-95 text-[#8B92A5] hover:text-[#F3F4F6]">
+                        <i data-lucide="check-square" class="w-5 h-5 mb-0.5"></i>
+                        <span class="text-[11px] font-semibold tracking-tight">Tasks</span>
+                    </button>
+
+                    <button onclick="switchMainTab('focus')" data-nav="focus" class="nav-btn flex flex-col items-center justify-center py-2 px-2 rounded-2xl transition-all active:scale-95 text-[#8B92A5] hover:text-[#F3F4F6]">
+                        <i data-lucide="timer" class="w-5 h-5 mb-0.5"></i>
+                        <span class="text-[11px] font-semibold tracking-tight">Focus &amp; Quiz</span>
+                    </button>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Toast Notification Stack -->
+        <div id="toast-stack" class="pointer-events-none absolute top-16 left-4 right-4 z-[60] flex flex-col items-center gap-2"></div>
+
+        <!-- Modal / Sheet Overlay Layer -->
+        <div id="modal-backdrop" class="hidden absolute inset-0 z-40 bg-black/80 backdrop-blur-xs flex flex-col justify-end sm:justify-center"></div>
+    </div>
+
+    <!-- Application Logic, IndexedDB Per-UID Vault & Firebase Private Auth/Firestore -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import {
+            getAuth,
+            GoogleAuthProvider,
+            signInWithPopup,
+            signInWithEmailAndPassword,
+            createUserWithEmailAndPassword,
+            signInWithCustomToken,
+            signInAnonymously,
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==========================================
+        // 1. UTILITIES, SAFE ESCAPING & SHA-256 HASHING
+        // ==========================================
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function formatRelativeTime(ts) {
+            if (!ts) return 'Just now';
+            const diffSec = Math.floor((Date.now() - ts) / 1000);
+            if (diffSec < 60) return 'Just now';
+            if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+            if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+            const d = new Date(ts);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function getTodayKey() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        async function sha256Hex(text) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(`studyos_salt_v1::${text}`);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // ==========================================
+        // 2. USER-SCOPED INDEXEDDB STORAGE
+        //    - studyos_vault_{uid}: Private binary PDFs & images
+        //    - studyos_private_{uid}: Private security settings & Device-Only data
+        // ==========================================
+        function openScopedIDB(dbName, storeNames) {
+            return new Promise((resolve) => {
+                if (!window.indexedDB) {
+                    resolve(null);
+                    return;
+                }
+                const req = indexedDB.open(dbName, 1);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    storeNames.forEach((name) => {
+                        if (!db.objectStoreNames.contains(name)) {
+                            db.createObjectStore(name);
+                        }
+                    });
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => resolve(null);
+            });
+        }
+
+        // Scoped Binary Vault: studyos_vault_{uid}
+        async function saveVaultBinary(uid, fileId, dataUrl) {
+            const idb = await openScopedIDB(`studyos_vault_${uid}`, ['files']);
+            if (!idb) return false;
+            return new Promise((resolve) => {
+                const tx = idb.transaction('files', 'readwrite');
+                tx.objectStore('files').put(dataUrl, fileId);
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = () => resolve(false);
+            });
+        }
+
+        async function getVaultBinary(uid, fileId) {
+            const idb = await openScopedIDB(`studyos_vault_${uid}`, ['files']);
+            if (!idb) return null;
+            return new Promise((resolve) => {
+                const tx = idb.transaction('files', 'readonly');
+                const req = tx.objectStore('files').get(fileId);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => resolve(null);
+            });
+        }
+
+        async function deleteVaultBinary(uid, fileId) {
+            const idb = await openScopedIDB(`studyos_vault_${uid}`, ['files']);
+            if (!idb) return;
+            const tx = idb.transaction('files', 'readwrite');
+            tx.objectStore('files').delete(fileId);
+        }
+
+        async function clearScopedVaultIDB(uid) {
+            const idb = await openScopedIDB(`studyos_vault_${uid}`, ['files']);
+            if (!idb) return;
+            const tx = idb.transaction('files', 'readwrite');
+            tx.objectStore('files').clear();
+        }
+
+        // Scoped Private State & Security Settings: studyos_private_{uid}
+        async function idbPutMeta(uid, key, value) {
+            const idb = await openScopedIDB(`studyos_private_${uid}`, ['kv']);
+            if (!idb) return false;
+            return new Promise((resolve) => {
+                const tx = idb.transaction('kv', 'readwrite');
+                tx.objectStore('kv').put(value, key);
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = () => resolve(false);
+            });
+        }
+
+        async function idbGetMeta(uid, key) {
+            const idb = await openScopedIDB(`studyos_private_${uid}`, ['kv']);
+            if (!idb) return null;
+            return new Promise((resolve) => {
+                const tx = idb.transaction('kv', 'readonly');
+                const req = tx.objectStore('kv').get(key);
+                req.onsuccess = () => resolve(req.result ?? null);
+                req.onerror = () => resolve(null);
+            });
+        }
+
+        // ==========================================
+        // 3. APPLICATION STATE & TOKENS
+        // ==========================================
+        const MODULE_ACCENTS = {
+            indigo: { dot: 'bg-indigo-500', badge: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/25' },
+            cyan: { dot: 'bg-sky-400', badge: 'bg-sky-500/15 text-sky-400 border-sky-500/25' },
+            emerald: { dot: 'bg-emerald-400', badge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' },
+            amber: { dot: 'bg-amber-400', badge: 'bg-amber-500/15 text-amber-400 border-amber-500/25' },
+            violet: { dot: 'bg-violet-400', badge: 'bg-violet-500/15 text-violet-400 border-violet-500/25' }
+        };
+
+        const NOTE_TYPE_BADGES = {
+            Cours: 'bg-sky-500/15 text-sky-400 border border-sky-500/25',
+            TD: 'bg-amber-500/15 text-amber-400 border border-amber-500/25',
+            TP: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+        };
+
+        const state = {
+            // Authentication & Privacy State
+            authMode: 'unauthenticated', // 'unauthenticated' | 'firebase' | 'device-only'
+            user: null, // { uid, email, displayName, provider }
+            authTab: 'signin', // 'signin' | 'signup'
+            authLoading: false,
+            authError: '',
+            firebaseAvailable: false,
+            hasCustomToken: false,
+
+            // On-Device App Lock PIN State
+            pinHash: null, // SHA-256 hex string or null
+            autoLockOnBlur: true,
+            isLocked: false,
+            pinEntryBuffer: '',
+            pinError: false,
+
+            // Navigation & Workspace Filters
+            activeTab: 'modules', // 'modules' | 'tasks' | 'focus'
+            selectedModuleId: null,
+            moduleSubTab: 'notes', // 'notes' | 'vault'
+            noteCategoryFilter: 'All',
+            vaultTypeFilter: 'All',
+            globalSearch: '',
+
+            // Tasks Tab State
+            taskFilter: 'active',
+            newTaskModuleId: 'general',
+
+            // Focus & Quiz Tab State
+            focusSubTab: 'pomodoro', // 'pomodoro' | 'flashcards'
+            pomoMode: 'focus', // 'focus' | 'short' | 'long'
+            pomoDurations: { focus: 25 * 60, short: 5 * 60, long: 15 * 60 },
+            pomoRemaining: 25 * 60,
+            pomoRunning: false,
+            pomoIntention: '',
+            completedSessionsToday: 0,
+
+            // Flashcards & Self-Quiz State
+            fcModuleFilter: 'all',
+            fcMode: 'browse', // 'browse' | 'quiz'
+            fcIndex: 0,
+            fcFlipped: false,
+            quizDeck: [],
+            quizIndex: 0,
+            quizRevealed: false,
+            quizGotItIds: [],
+            quizMissedIds: [],
+            quizFinished: false,
+
+            // Data Collections (strictly scoped to active UID)
+            syncStatus: 'Private',
+            modules: [],
+            notes: [],
+            vaultItems: [],
+            tasks: [],
+            flashcards: [],
+            stats: [],
+            memoryFileCache: {}
+        };
+
+        // ==========================================
+        // 4. PRELOADED REALISTIC ENGINEERING STARTER DATA
+        // ==========================================
+        function getStarterWorkspaceData() {
+            const now = Date.now();
+            return {
+                modules: [
+                    {
+                        id: 'mod_net',
+                        title: 'Réseaux Informatiques',
+                        code: 'NET-201',
+                        subtitle: 'Subnets, VLANs, 802.1Q, OSPF',
+                        accent: 'cyan'
+                    },
+                    {
+                        id: 'mod_web',
+                        title: 'Développement Web Back-End',
+                        code: 'WEB-204',
+                        subtitle: 'PHP, PDO, SQL, Sessions',
+                        accent: 'indigo'
+                    },
+                    {
+                        id: 'mod_eln',
+                        title: 'Électronique Numérique',
+                        code: 'ELN-102',
+                        subtitle: 'Logic Gates, Karnaugh Maps, Flip-Flops',
+                        accent: 'amber'
+                    },
+                    {
+                        id: 'mod_sta',
+                        title: 'Statistiques Inférentielles',
+                        code: 'STA-203',
+                        subtitle: 'Hypothesis Testing, Confidence Intervals, Estimators',
+                        accent: 'emerald'
+                    }
+                ],
+                notes: [
+                    {
+                        id: 'note_net_1',
+                        moduleId: 'mod_net',
+                        title: 'Architecture VLAN & Trunking IEEE 802.1Q',
+                        category: 'Cours',
+                        updatedAt: now - 1000 * 60 * 25,
+                        content: `## Segmentation Logique (Niveau 2)
+• Un VLAN isole les domaines de broadcast au niveau liaison de données (OSI Layer 2).
+• Les ports **Access** appartiennent à un seul VLAN (trames non taguées).
+• Les ports **Trunk** transportent plusieurs VLANs entre switches en insérant un tag de **4 octets (IEEE 802.1Q)** contenant le VID (12 bits → 4094 VLANs utilisables).
+
+[[formula: Hôtes utilisables par sous-réseau = 2^(32 - CIDR) - 2]]
+
+\`\`\`ios
+Switch(config)# vlan 10
+Switch(config-vlan)# name ETUDIANTS
+Switch(config)# interface GigabitEthernet0/1
+Switch(config-if)# switchport mode trunk
+Switch(config-if)# switchport trunk allowed vlan 10,20,99
+\`\`\`
+
+[[trick: Le Native VLAN (VLAN 1 par défaut) circule sans tag sur un lien trunk 802.1Q. Toujours vérifier la correspondance du Native VLAN des deux côtés pour éviter les erreurs CDP/VLAN mismatch !]]`
+                    },
+                    {
+                        id: 'note_net_2',
+                        moduleId: 'mod_net',
+                        title: 'Lab OSPF Single-Area & Vérification Voisinage',
+                        category: 'TP',
+                        updatedAt: now - 1000 * 60 * 140,
+                        content: `## Configuration OSPF Process ID 1
+• Utiliser le **Wildcard Mask** (inverse du masque de sous-réseau : \`255.255.255.255 - Mask\`).
+• L'élection du Router-ID suit l'ordre : commande \`router-id\` > plus haute IP Loopback > plus haute IP interface physique active.
+
+\`\`\`ios
+Router(config)# router ospf 1
+Router(config-router)# router-id 1.1.1.1
+Router(config-router)# network 192.168.10.0 0.0.0.255 area 0
+Router# show ip ospf neighbor
+Router# show ip route ospf
+\`\`\`
+
+[[trick: Si deux routeurs restent bloqués en état INIT ou EXSTART, vérifiez le masque de sous-réseau, les timers Hello/Dead (10s/40s en Ethernet) et le MTU des interfaces.]]`
+                    },
+                    {
+                        id: 'note_web_1',
+                        moduleId: 'mod_web',
+                        title: 'Requêtes Préparées PDO & Protection SQLi',
+                        category: 'Cours',
+                        updatedAt: now - 1000 * 60 * 60 * 3,
+                        content: `## Connexion & Requêtes Paramétrées
+• Toujours activer \`PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION\` et désactiver l'émulation des requêtes préparées.
+• Les paramètres liés (\`:email\`, \`?\`) séparent strictement la structure SQL des données utilisateur.
+
+\`\`\`php
+$pdo = new PDO($dsn, $user, $pass, [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+]);
+
+$stmt = $pdo->prepare('SELECT id, password_hash FROM users WHERE email = :email');
+$stmt->execute(['email' => $email]);
+$user = $stmt->fetch();
+\`\`\`
+
+[[trick: PDO protège contre l'injection SQL (SQLi), mais PAS contre le XSS ! Utilisez toujours htmlspecialchars($str, ENT_QUOTES, 'UTF-8') à l'affichage HTML.]]`
+                    },
+                    {
+                        id: 'note_web_2',
+                        moduleId: 'mod_web',
+                        title: 'TD Authentification : Hachage & Régénération de Session',
+                        category: 'TD',
+                        updatedAt: now - 1000 * 60 * 60 * 12,
+                        content: `## Cycle de Connexion Sécurisé
+• Ne jamais utiliser MD5 ou SHA1 pour les mots de passe : utiliser \`password_hash($pwd, PASSWORD_DEFAULT)\` (Bcrypt/Argon2).
+• Appeler \`session_regenerate_id(true)\` immédiatement après la vérification du mot de passe pour bloquer le **Session Fixation**.
+
+\`\`\`php
+if ($user && password_verify($_POST['password'], $user['password_hash'])) {
+    session_regenerate_id(true);
+    $_SESSION['user_id'] = $user['id'];
+}
+\`\`\``
+                    },
+                    {
+                        id: 'note_eln_1',
+                        moduleId: 'mod_eln',
+                        title: 'Simplification par Tableaux de Karnaugh (K-Map)',
+                        category: 'Cours',
+                        updatedAt: now - 1000 * 60 * 60 * 20,
+                        content: `## Règles de Regroupement (SOP)
+• Ordonner les colonnes et lignes selon le **Code Gray** (\`00, 01, 11, 10\`) afin qu'une seule variable change entre deux cases adjacentes.
+• Former les plus grands rectangles possibles de taille puissance de 2 : **1, 2, 4, 8, 16**.
+• Les états indifférents (**Don't Care X**) peuvent être inclus s'ils permettent d'agrandir un groupe, sinon ignorés.
+
+[[trick: N'oubliez pas que le tableau de Karnaugh est torique : le bord gauche est adjacent au bord droit, et le haut est adjacent au bas (les 4 coins forment un groupe de 4 !).]]`
+                    },
+                    {
+                        id: 'note_sta_1',
+                        moduleId: 'mod_sta',
+                        title: 'Intervalles de Confiance & Tests d’Hypothèses',
+                        category: 'Cours',
+                        updatedAt: now - 1000 * 60 * 60 * 30,
+                        content: `## Choix de la Loi & Règle de Décision
+• Si l'écart-type de la population σ est connu (ou n ≥ 30), utiliser la loi Normale centrée réduite Z.
+• Si σ est inconnu et n < 30 (population gaussienne), utiliser la loi de **Student t_(n-1)**.
+
+[[formula: IC(1 - α) = x̄ ± t_(α/2, n-1) · (s / √n)]]
+
+• **Règle p-value** : Si p-value < α (souvent 0.05), on **rejette H₀** au risque de première espèce α.
+
+[[trick: Rejeter H0 à tort = Erreur de Type I (risque α). Ne pas rejeter H0 alors que H1 est vraie = Erreur de Type II (risque β, Puissance = 1 - β).]]`
+                    }
+                ],
+                vaultItems: [
+                    {
+                        id: 'vlt_net_1',
+                        moduleId: 'mod_net',
+                        type: 'link',
+                        title: 'Cisco IOS & Subnetting Cheat Sheet',
+                        tag: 'Cheat Sheet',
+                        url: 'https://packetlife.net/library/cheat-sheets/',
+                        createdAt: now - 1000 * 60 * 50
+                    },
+                    {
+                        id: 'vlt_net_2',
+                        moduleId: 'mod_net',
+                        type: 'snippet',
+                        title: 'Router-on-a-Stick Sub-Interface Template',
+                        tag: 'CLI',
+                        content: `interface GigabitEthernet0/0.10\n encapsulation dot1Q 10\n ip address 192.168.10.1 255.255.255.0\n no shutdown`,
+                        createdAt: now - 1000 * 60 * 90
+                    },
+                    {
+                        id: 'vlt_web_1',
+                        moduleId: 'mod_web',
+                        type: 'link',
+                        title: 'PHP Official PDO Manual & Drivers',
+                        tag: 'Docs',
+                        url: 'https://www.php.net/manual/en/book.pdo.php',
+                        createdAt: now - 1000 * 60 * 300
+                    },
+                    {
+                        id: 'vlt_eln_1',
+                        moduleId: 'mod_eln',
+                        type: 'snippet',
+                        title: 'Lois de De Morgan & Identités Booléennes',
+                        tag: 'Cheat Sheet',
+                        content: `!(A · B) = !A + !B\n!(A + B) = !A · !B\nA + (!A · B) = A + B\n(A + B) · (A + C) = A + (B · C)`,
+                        createdAt: now - 1000 * 60 * 500
+                    },
+                    {
+                        id: 'vlt_sta_1',
+                        moduleId: 'mod_sta',
+                        type: 'link',
+                        title: 'NIST Engineering Statistics Handbook',
+                        tag: 'PDF',
+                        url: 'https://www.itl.nist.gov/div898/handbook/',
+                        createdAt: now - 1000 * 60 * 700
+                    }
+                ],
+                flashcards: [
+                    {
+                        id: 'fc_1',
+                        moduleId: 'mod_net',
+                        front: 'Combien d’adresses IP hôtes sont utilisables dans un sous-réseau /27 ?',
+                        back: '30 hôtes utilisables.\n\nCalcul : 32 - 27 = 5 bits hôtes → 2⁵ - 2 = 32 - 2 = 30 (on retire l’adresse réseau et le broadcast). Masque : 255.255.255.224.'
+                    },
+                    {
+                        id: 'fc_2',
+                        moduleId: 'mod_net',
+                        front: 'Quel protocole standardise le marquage (tagging) de 4 octets des trames Ethernet sur un lien Trunk ?',
+                        back: 'IEEE 802.1Q.\n\nIl insère un champ de 4 octets contenant notamment le VLAN ID (VID) sur 12 bits.'
+                    },
+                    {
+                        id: 'fc_3',
+                        moduleId: 'mod_net',
+                        front: 'Quels sont les timers Hello et Dead par défaut d’OSPF sur un réseau Broadcast (Ethernet) ?',
+                        back: 'Hello = 10 secondes\nDead = 40 secondes (4 × Hello).'
+                    },
+                    {
+                        id: 'fc_4',
+                        moduleId: 'mod_web',
+                        front: 'Pourquoi faut-il appeler session_regenerate_id(true) juste après une connexion réussie en PHP ?',
+                        back: 'Pour prévenir les attaques par fixation de session (Session Fixation) en remplaçant l’identifiant de session pré-authentification par un nouvel ID aléatoire.'
+                    },
+                    {
+                        id: 'fc_5',
+                        moduleId: 'mod_web',
+                        front: 'Quelle est la différence HTTP entre les codes 401 Unauthorized et 403 Forbidden ?',
+                        back: '401 : L’utilisateur n’est pas authentifié (identifiants manquants ou invalides).\n403 : L’utilisateur est authentifié, mais n’a pas les droits d’accès à cette ressource.'
+                    },
+                    {
+                        id: 'fc_6',
+                        moduleId: 'mod_eln',
+                        front: 'Pourquoi les axes d’un tableau de Karnaugh sont-ils ordonnés en Code Gray (00, 01, 11, 10) ?',
+                        back: 'Pour garantir qu’une seule variable booléenne change d’état entre deux cases adjacentes, permettant l’élimination algébrique A + Ā = 1.'
+                    },
+                    {
+                        id: 'fc_7',
+                        moduleId: 'mod_eln',
+                        front: 'Quel est l’état de sortie Q(t+1) d’une bascule JK lorsque J = 1 et K = 1 au front d’horloge ?',
+                        back: 'Basculement (Toggle) : Q(t+1) = Q̄(t).'
+                    },
+                    {
+                        id: 'fc_8',
+                        moduleId: 'mod_sta',
+                        front: 'Quand utilise-t-on la loi de Student t_(n-1) plutôt que la loi Normale Z pour un intervalle de confiance ?',
+                        back: 'Lorsque l’écart-type réel σ de la population est inconnu (estimé par s) et que la taille de l’échantillon est petite (n < 30) sur une population gaussienne.'
+                    },
+                    {
+                        id: 'fc_9',
+                        moduleId: 'mod_sta',
+                        front: 'Que signifie une p-value inférieure au seuil α (ex: p = 0.012 < 0.05) ?',
+                        back: 'On rejette l’hypothèse nulle H₀ : le résultat observé est statistiquement significatif au seuil α.'
+                    }
+                ],
+                tasks: [
+                    {
+                        id: 'tsk_1',
+                        title: 'Terminer la fiche de révision OSPF Multi-Area',
+                        moduleId: 'mod_net',
+                        completed: false,
+                        createdAt: now - 1000 * 60 * 40
+                    },
+                    {
+                        id: 'tsk_2',
+                        title: 'Corriger les exercices 3 et 4 du TD PDO & Sessions',
+                        moduleId: 'mod_web',
+                        completed: false,
+                        createdAt: now - 1000 * 60 * 120
+                    },
+                    {
+                        id: 'tsk_3',
+                        title: 'Refaire 2 tableaux de Karnaugh à 4 variables',
+                        moduleId: 'mod_eln',
+                        completed: false,
+                        createdAt: now - 1000 * 60 * 240
+                    },
+                    {
+                        id: 'tsk_4',
+                        title: 'Imprimer la table de la loi Normale et Student',
+                        moduleId: 'mod_sta',
+                        completed: true,
+                        createdAt: now - 1000 * 60 * 500
+                    }
+                ],
+                stats: [
+                    {
+                        id: `pom_${getTodayKey()}`,
+                        date: getTodayKey(),
+                        sessions: 2
+                    }
+                ]
+            };
+        }
+
+        // ==========================================
+        // 5. FIREBASE AUTH, STRICT UID ISOLATION & DEVICE-ONLY ENGINE
+        // ==========================================
+        let db = null;
+        let auth = null;
+        let activeUnsubscribers = [];
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'studyos-default-app';
+
+        function clearAllUnsubscribers() {
+            activeUnsubscribers.forEach((unsub) => {
+                try { unsub(); } catch (e) {}
+            });
+            activeUnsubscribers = [];
+        }
+
+        function resetInMemoryWorkspace() {
+            clearAllUnsubscribers();
+            stopPomodoroInterval();
+            state.modules = [];
+            state.notes = [];
+            state.vaultItems = [];
+            state.flashcards = [];
+            state.tasks = [];
+            state.stats = [];
+            state.memoryFileCache = {};
+            state.selectedModuleId = null;
+            state.globalSearch = '';
+            state.pinHash = null;
+            state.isLocked = false;
+            state.pinEntryBuffer = '';
+            state.pinError = false;
+        }
+
+        function mapAuthError(err) {
+            const code = err?.code || '';
+            if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+                return 'Invalid email or password. Please check your credentials.';
+            }
+            if (code === 'auth/email-already-in-use') {
+                return 'An account with this email already exists. Switch to Sign In.';
+            }
+            if (code === 'auth/weak-password') {
+                return 'Password must be at least 6 characters long.';
+            }
+            if (code === 'auth/invalid-email') {
+                return 'Please enter a valid email address.';
+            }
+            if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/unauthorized-domain') {
+                return 'Google popup blocked in this embedded frame. Use Email/Password, Workspace Token, or Private Device-Only Mode.';
+            }
+            return err?.message || 'Authentication failed. Please try again.';
+        }
+
+        async function initFirebaseSubsystem() {
+            try {
+                if (typeof __firebase_config === 'undefined' || !__firebase_config) {
+                    state.firebaseAvailable = false;
+                    renderScreenLayers();
+                    return;
+                }
+
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                state.firebaseAvailable = true;
+                state.hasCustomToken = typeof __initial_auth_token !== 'undefined' && Boolean(__initial_auth_token);
+
+                // Listen to Firebase Auth state changes — never auto-bypass the Privacy Gate unless already signed in
+                onAuthStateChanged(auth, async (fbUser) => {
+                    if (fbUser) {
+                        await enterPrivateWorkspace({
+                            mode: 'firebase',
+                            user: {
+                                uid: fbUser.uid,
+                                email: fbUser.email || (fbUser.isAnonymous ? 'Private Workspace Session' : 'Authenticated Student'),
+                                displayName: fbUser.displayName || (fbUser.email ? fbUser.email.split('@')[0] : 'Student'),
+                                provider: fbUser.providerData?.[0]?.providerId || (fbUser.isAnonymous ? 'Workspace Token' : 'Firebase Auth')
+                            }
+                        });
+                    } else if (state.authMode === 'firebase') {
+                        resetInMemoryWorkspace();
+                        state.authMode = 'unauthenticated';
+                        state.user = null;
+                        renderScreenLayers();
+                    } else {
+                        renderScreenLayers();
+                    }
+                });
+            } catch (e) {
+                console.error('Firebase init check:', e);
+                state.firebaseAvailable = false;
+                renderScreenLayers();
+            }
+        }
+
+        async function loadUserSecurityPrefs(uid) {
+            const sec = await idbGetMeta(uid, 'security_prefs');
+            if (sec && typeof sec === 'object') {
+                state.pinHash = sec.pinHash || null;
+                state.autoLockOnBlur = sec.autoLockOnBlur !== undefined ? Boolean(sec.autoLockOnBlur) : true;
+            } else {
+                state.pinHash = null;
+                state.autoLockOnBlur = true;
+            }
+            // If user has configured a 4-digit PIN, require PIN on fresh unlock
+            state.isLocked = Boolean(state.pinHash);
+            state.pinEntryBuffer = '';
+            state.pinError = false;
+        }
+
+        async function saveUserSecurityPrefs(uid) {
+            await idbPutMeta(uid, 'security_prefs', {
+                pinHash: state.pinHash,
+                autoLockOnBlur: state.autoLockOnBlur
+            });
+        }
+
+        async function enterPrivateWorkspace({ mode, user }) {
+            resetInMemoryWorkspace();
+            state.authMode = mode;
+            state.user = user;
+            state.authError = '';
+            state.authLoading = false;
+
+            await loadUserSecurityPrefs(user.uid);
+
+            if (mode === 'device-only') {
+                state.syncStatus = 'Device-Only';
+                await loadDeviceOnlyData(user.uid);
+                renderScreenLayers();
+            } else if (mode === 'firebase' && db) {
+                state.syncStatus = 'Cloud Encrypted';
+                attachFirestoreListeners(user.uid);
+                renderScreenLayers();
+            }
+        }
+
+        // --- Device-Only IndexedDB Persistence (Zero Cloud Upload) ---
+        async function loadDeviceOnlyData(uid) {
+            const saved = await idbGetMeta(uid, 'workspace_collections');
+            if (saved && saved.initialized) {
+                state.modules = saved.modules || [];
+                state.notes = saved.notes || [];
+                state.vaultItems = saved.vaultItems || [];
+                state.flashcards = saved.flashcards || [];
+                state.tasks = saved.tasks || [];
+                state.stats = saved.stats || [];
+            } else {
+                const starter = getStarterWorkspaceData();
+                state.modules = starter.modules;
+                state.notes = starter.notes;
+                state.vaultItems = starter.vaultItems;
+                state.flashcards = starter.flashcards;
+                state.tasks = starter.tasks;
+                state.stats = starter.stats;
+                await persistDeviceOnlyData(uid);
+            }
+            syncTodaySessionCount();
+        }
+
+        async function persistDeviceOnlyData(uid) {
+            await idbPutMeta(uid, 'workspace_collections', {
+                initialized: true,
+                modules: state.modules,
+                notes: state.notes,
+                vaultItems: state.vaultItems,
+                flashcards: state.flashcards,
+                tasks: state.tasks,
+                stats: state.stats
+            });
+        }
+
+        // --- Firebase Firestore Strict Per-UID Listeners ---
+        function attachFirestoreListeners(uid) {
+            if (!db || !uid) return;
+            clearAllUnsubscribers();
+            const colNames = ['modules', 'notes', 'vaultItems', 'flashcards', 'tasks', 'stats'];
+            let initialSnapshotsReceived = new Set();
+            let seededTriggered = false;
+
+            colNames.forEach((colName) => {
+                // Strict private UID isolation: /artifacts/{appId}/users/{uid}/{colName}
+                const colRef = collection(db, 'artifacts', appId, 'users', uid, colName);
+
+                const unsub = onSnapshot(colRef, async (snapshot) => {
+                    // Guard against stale snapshots if user signed out
+                    if (!state.user || state.user.uid !== uid || state.authMode !== 'firebase') return;
+
+                    const list = [];
+                    snapshot.forEach((docSnap) => {
+                        list.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    state[colName] = list;
+
+                    if (colName === 'stats') {
+                        syncTodaySessionCount();
+                    }
+
+                    initialSnapshotsReceived.add(colName);
+                    if (initialSnapshotsReceived.size === colNames.length && !seededTriggered) {
+                        seededTriggered = true;
+                        const alreadyInitialized = await idbGetMeta(uid, 'cloud_seeded_v1');
+                        const totalItems = state.modules.length + state.notes.length + state.tasks.length + state.flashcards.length;
+                        if (!alreadyInitialized && totalItems === 0) {
+                            await idbPutMeta(uid, 'cloud_seeded_v1', true);
+                            await seedStarterToFirestore(uid);
+                        } else if (totalItems > 0 && !alreadyInitialized) {
+                            await idbPutMeta(uid, 'cloud_seeded_v1', true);
+                        }
+                    }
+
+                    renderAll();
+                }, (error) => {
+                    console.error(`Firestore sync error on ${colName}:`, error);
+                    state.syncStatus = 'Sync Warning';
+                    renderHeader();
+                });
+
+                activeUnsubscribers.push(unsub);
+            });
+        }
+
+        async function seedStarterToFirestore(uid) {
+            if (!db || !uid) return;
+            const starter = getStarterWorkspaceData();
+            try {
+                for (const colName of Object.keys(starter)) {
+                    for (const item of starter[colName]) {
+                        const { id, ...payload } = item;
+                        await setDoc(doc(db, 'artifacts', appId, 'users', uid, colName, id), payload);
+                    }
+                }
+            } catch (e) {
+                console.error('Starter seeding error:', e);
+            }
+        }
+
+        function syncTodaySessionCount() {
+            const todayDoc = state.stats.find(s => s.id === `pom_${getTodayKey()}`);
+            state.completedSessionsToday = todayDoc ? (todayDoc.sessions || 0) : 0;
+        }
+
+        // Unified Private CRUD Operations
+        async function upsertDoc(colName, item) {
+            if (!state.user) return null;
+            const uid = state.user.uid;
+            const id = item.id || `${colName.slice(0, 3)}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+            const record = { ...item, id };
+
+            const idx = state[colName].findIndex(x => x.id === id);
+            if (idx >= 0) state[colName][idx] = record;
+            else state[colName].push(record);
+
+            renderAll();
+
+            if (state.authMode === 'device-only') {
+                await persistDeviceOnlyData(uid);
+            } else if (state.authMode === 'firebase' && db && auth?.currentUser) {
+                try {
+                    const { id: docId, ...payload } = record;
+                    await setDoc(doc(db, 'artifacts', appId, 'users', uid, colName, docId), payload);
+                } catch (e) {
+                    console.error(`Firestore write error on ${colName}:`, e);
+                }
+            }
+            return record;
+        }
+
+        async function deleteDocItem(colName, id) {
+            if (!state.user) return;
+            const uid = state.user.uid;
+            state[colName] = state[colName].filter(x => x.id !== id);
+            renderAll();
+
+            if (state.authMode === 'device-only') {
+                await persistDeviceOnlyData(uid);
+            } else if (state.authMode === 'firebase' && db && auth?.currentUser) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'users', uid, colName, id));
+                } catch (e) {
+                    console.error(`Firestore delete error on ${colName}:`, e);
+                }
+            }
+        }
+
+        // ==========================================
+        // 6. AUTH GATE ACTIONS & RENDERING
+        // ==========================================
+        window.switchAuthTab = function(tab) {
+            state.authTab = tab;
+            state.authError = '';
+            renderAuthGate();
+        };
+
+        window.handleGoogleSignIn = async function() {
+            if (!auth) {
+                state.authError = 'Cloud authentication unavailable in offline environment. Use Private Device-Only Mode below.';
+                renderAuthGate();
+                return;
+            }
+            state.authLoading = true;
+            state.authError = '';
+            renderAuthGate();
+            try {
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
+            } catch (err) {
+                state.authLoading = false;
+                state.authError = mapAuthError(err);
+                renderAuthGate();
+            }
+        };
+
+        window.handleEmailAuthSubmit = async function(e) {
+            e.preventDefault();
+            if (!auth) {
+                state.authError = 'Cloud authentication unavailable in offline environment. Use Private Device-Only Mode below.';
+                renderAuthGate();
+                return;
+            }
+            const email = document.getElementById('auth-email-input')?.value.trim();
+            const password = document.getElementById('auth-pass-input')?.value;
+            if (!email || !password) return;
+
+            state.authLoading = true;
+            state.authError = '';
+            renderAuthGate();
+
+            try {
+                if (state.authTab === 'signup') {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                } else {
+                    await signInWithEmailAndPassword(auth, email, password);
+                }
+            } catch (err) {
+                state.authLoading = false;
+                state.authError = mapAuthError(err);
+                renderAuthGate();
+            }
+        };
+
+        window.handleWorkspaceTokenSignIn = async function() {
+            if (!auth) return;
+            state.authLoading = true;
+            state.authError = '';
+            renderAuthGate();
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                state.authLoading = false;
+                state.authError = mapAuthError(err);
+                renderAuthGate();
+            }
+        };
+
+        window.handleDeviceOnlySignIn = async function() {
+            state.authLoading = true;
+            state.authError = '';
+            renderAuthGate();
+            await enterPrivateWorkspace({
+                mode: 'device-only',
+                user: {
+                    uid: 'device-owner',
+                    email: 'Local Device Storage Only',
+                    displayName: 'Private Student',
+                    provider: 'Offline IndexedDB'
+                }
+            });
+            showToast('Private Device-Only Vault unlocked', 'emerald');
+        };
+
+        window.handleSignOut = async function() {
+            closeModal();
+            const wasFirebase = state.authMode === 'firebase';
+            resetInMemoryWorkspace();
+            state.authMode = 'unauthenticated';
+            state.user = null;
+            state.authError = '';
+            state.authLoading = false;
+
+            if (wasFirebase && auth) {
+                try {
+                    await signOut(auth);
+                } catch (e) {}
+            }
+            renderScreenLayers();
+            showToast('Signed out — memory cleared', 'indigo');
+        };
+
+        function renderAuthGate() {
+            const gate = document.getElementById('auth-gate');
+            if (!gate) return;
+
+            gate.innerHTML = `
+                <div class="space-y-5 my-auto">
+                    <!-- Brand & End-to-End Privacy Header -->
+                    <div class="text-center space-y-2.5 pt-2">
+                        <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500 to-sky-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25">
+                            <i data-lucide="shield-check" class="w-7 h-7"></i>
+                        </div>
+                        <div>
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-mono font-bold uppercase tracking-wider mb-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Zero-Sharing Private Vault
+                            </div>
+                            <h1 class="text-2xl font-extrabold tracking-tight text-[#F3F4F6]">StudyOS</h1>
+                            <p class="text-xs text-[#8B92A5] max-w-[290px] mx-auto mt-1 leading-relaxed">
+                                Strictly private engineering workspace. Only your authenticated account can read or decrypt your notes, tasks &amp; files.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Error Alert -->
+                    ${state.authError ? `
+                        <div class="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs leading-relaxed flex items-start gap-2">
+                            <i data-lucide="alert-circle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i>
+                            <span>${escapeHtml(state.authError)}</span>
+                        </div>
+                    ` : ''}
+
+                    <!-- Cloud Account Card (Google + Email/Password) -->
+                    <div class="p-4 rounded-3xl bg-[#111318] border border-[#1E222B] space-y-3.5">
+                        <button type="button" onclick="handleGoogleSignIn()" ${state.authLoading ? 'disabled' : ''} class="w-full py-3 px-4 rounded-2xl bg-[#F3F4F6] hover:bg-white text-[#09090B] text-xs font-extrabold flex items-center justify-center gap-2.5 transition active:scale-[0.99] disabled:opacity-60">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M23.745 12.27c0-.79-.07-1.54-.19-2.27h-11.3v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/>
+                                <path fill="#34A853" d="M12.255 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96h-3.98v3.09C3.515 21.3 7.565 24 12.255 24z"/>
+                                <path fill="#FBBC05" d="M5.525 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62h-3.98a11.86 11.86 0 000 10.76l3.98-3.09z"/>
+                                <path fill="#EA4335" d="M12.255 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C18.205 1.19 15.495 0 12.255 0c-4.69 0-8.74 2.7-10.71 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"/>
+                            </svg>
+                            <span>Continue with Google</span>
+                        </button>
+
+                        <div class="relative flex items-center py-0.5">
+                            <div class="flex-grow border-t border-[#1E222B]"></div>
+                            <span class="shrink mx-3 text-[10px] font-mono uppercase tracking-wider text-[#8B92A5]">or Email &amp; Password</span>
+                            <div class="flex-grow border-t border-[#1E222B]"></div>
+                        </div>
+
+                        <!-- Sign In / Sign Up Switcher -->
+                        <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-[#09090B] border border-[#1E222B]">
+                            <button type="button" onclick="switchAuthTab('signin')" class="py-1.5 rounded-lg text-xs font-bold transition ${state.authTab === 'signin' ? 'bg-[#1E222B] text-[#F3F4F6]' : 'text-[#8B92A5]'}">Sign In</button>
+                            <button type="button" onclick="switchAuthTab('signup')" class="py-1.5 rounded-lg text-xs font-bold transition ${state.authTab === 'signup' ? 'bg-[#1E222B] text-[#F3F4F6]' : 'text-[#8B92A5]'}">Create Account</button>
+                        </div>
+
+                        <form onsubmit="handleEmailAuthSubmit(event)" class="space-y-2.5">
+                            <div>
+                                <input id="auth-email-input" type="email" required autocomplete="email" placeholder="student@university.edu" class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs text-[#F3F4F6] placeholder-[#8B92A5] focus:outline-none focus:border-indigo-500 transition" />
+                            </div>
+                            <div>
+                                <input id="auth-pass-input" type="password" required minlength="6" autocomplete="${state.authTab === 'signup' ? 'new-password' : 'current-password'}" placeholder="Password (min. 6 characters)" class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs text-[#F3F4F6] placeholder-[#8B92A5] focus:outline-none focus:border-indigo-500 transition" />
+                            </div>
+                            <button type="submit" ${state.authLoading ? 'disabled' : ''} class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition active:scale-[0.99] disabled:opacity-60">
+                                ${state.authLoading ? 'Authenticating...' : (state.authTab === 'signup' ? 'Create Private Account' : 'Unlock Cloud Workspace')}
+                            </button>
+                        </form>
+
+                        ${state.hasCustomToken ? `
+                            <button type="button" onclick="handleWorkspaceTokenSignIn()" class="w-full py-2 px-3 rounded-xl bg-sky-500/10 border border-sky-500/25 text-sky-400 text-[11px] font-bold hover:bg-sky-500/15 transition">
+                                Quick Unlock with Private Session Token
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <!-- 100% Offline Device-Only Option -->
+                    <div class="p-4 rounded-3xl bg-[#111318]/80 border border-[#1E222B] space-y-2">
+                        <button type="button" onclick="handleDeviceOnlySignIn()" ${state.authLoading ? 'disabled' : ''} class="w-full py-3 px-4 rounded-2xl bg-[#1E222B] hover:bg-[#262B36] text-[#F3F4F6] text-xs font-bold flex items-center justify-center gap-2 transition active:scale-[0.99]">
+                            <i data-lucide="smartphone" class="w-4 h-4 text-emerald-400"></i>
+                            <span>Private Device-Only Mode (Offline / No Cloud)</span>
+                        </button>
+                        <p class="text-[10px] text-[#8B92A5] text-center leading-relaxed">
+                            100% of your data stays strictly on this phone's browser storage (IndexedDB) with zero cloud upload.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="text-center pt-3">
+                    <p class="text-[10px] font-mono text-[#8B92A5]">
+                        UID-Isolated Storage • Local IndexedDB File Vault • SHA-256 PIN Lock
+                    </p>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // ==========================================
+        // 7. 4-DIGIT PIN LOCK SCREEN & AUTO-LOCK SHIELD
+        // ==========================================
+        window.engageInstantLock = function() {
+            if (!state.user) return;
+            if (!state.pinHash) {
+                openPrivacyShieldModal(true);
+                return;
+            }
+            state.isLocked = true;
+            state.pinEntryBuffer = '';
+            state.pinError = false;
+            closeModal();
+            renderScreenLayers();
+        };
+
+        window.pressPinDigit = async function(digit) {
+            if (!state.isLocked || state.pinEntryBuffer.length >= 4) return;
+            state.pinError = false;
+            state.pinEntryBuffer += String(digit);
+            renderLockScreen();
+
+            if (state.pinEntryBuffer.length === 4) {
+                const candidateHash = await sha256Hex(state.pinEntryBuffer);
+                if (candidateHash === state.pinHash) {
+                    state.isLocked = false;
+                    state.pinEntryBuffer = '';
+                    state.pinError = false;
+                    renderScreenLayers();
+                    showToast('Workspace unlocked', 'emerald');
+                } else {
+                    state.pinError = true;
+                    state.pinEntryBuffer = '';
+                    renderLockScreen();
+                }
+            }
+        };
+
+        window.pressPinBackspace = function() {
+            if (!state.isLocked || state.pinEntryBuffer.length === 0) return;
+            state.pinError = false;
+            state.pinEntryBuffer = state.pinEntryBuffer.slice(0, -1);
+            renderLockScreen();
+        };
+
+        // Auto-lock when switching apps/tabs if enabled and PIN is configured
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && state.user && state.pinHash && state.autoLockOnBlur && !state.isLocked) {
+                state.isLocked = true;
+                state.pinEntryBuffer = '';
+                state.pinError = false;
+                closeModal();
+                renderScreenLayers();
+            }
+        });
+
+        function renderLockScreen() {
+            const lockEl = document.getElementById('lock-screen');
+            if (!lockEl) return;
+
+            const dotsHtml = [0, 1, 2, 3].map((idx) => {
+                const filled = idx < state.pinEntryBuffer.length;
+                return `<span class="w-3.5 h-3.5 rounded-full border transition-all ${
+                    state.pinError
+                        ? 'border-rose-500 bg-rose-500/30'
+                        : filled
+                            ? 'border-indigo-400 bg-indigo-400 scale-110'
+                            : 'border-[#2E3442] bg-[#111318]'
+                }"></span>`;
+            }).join('');
+
+            lockEl.innerHTML = `
+                <div class="pt-6 text-center space-y-2">
+                    <div class="w-12 h-12 mx-auto rounded-2xl bg-[#111318] border border-[#1E222B] text-indigo-400 flex items-center justify-center">
+                        <i data-lucide="lock" class="w-5 h-5"></i>
+                    </div>
+                    <h2 class="text-lg font-extrabold text-[#F3F4F6]">StudyOS Locked</h2>
+                    <p class="text-xs text-[#8B92A5]">Enter your 4-digit Privacy PIN</p>
+                </div>
+
+                <div class="space-y-4 my-auto">
+                    <div class="flex items-center justify-center gap-4 py-2 ${state.pinError ? 'animate-shake' : ''}">
+                        ${dotsHtml}
+                    </div>
+                    <p class="text-center text-[11px] font-semibold h-4 ${state.pinError ? 'text-rose-400' : 'text-transparent'}">
+                        Incorrect PIN — try again
+                    </p>
+
+                    <!-- Tactile Numeric Keypad -->
+                    <div class="grid grid-cols-3 gap-3 max-w-[270px] mx-auto pt-2">
+                        ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => `
+                            <button type="button" onclick="pressPinDigit(${num})" class="h-14 rounded-2xl bg-[#111318] border border-[#1E222B] hover:bg-[#1E222B] text-lg font-mono font-bold text-[#F3F4F6] active:scale-95 transition">
+                                ${num}
+                            </button>
+                        `).join('')}
+                        <div></div>
+                        <button type="button" onclick="pressPinDigit(0)" class="h-14 rounded-2xl bg-[#111318] border border-[#1E222B] hover:bg-[#1E222B] text-lg font-mono font-bold text-[#F3F4F6] active:scale-95 transition">
+                            0
+                        </button>
+                        <button type="button" onclick="pressPinBackspace()" aria-label="Backspace" class="h-14 rounded-2xl bg-[#111318] border border-[#1E222B] hover:bg-[#1E222B] text-[#8B92A5] hover:text-[#F3F4F6] flex items-center justify-center active:scale-95 transition">
+                            <i data-lucide="delete" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center pb-2">
+                    <button type="button" onclick="handleSignOut()" class="text-xs font-semibold text-[#8B92A5] hover:text-rose-400 transition">
+                        Sign Out &amp; Switch Account
+                    </button>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function renderScreenLayers() {
+            const authGate = document.getElementById('auth-gate');
+            const lockScreen = document.getElementById('lock-screen');
+            const workspace = document.getElementById('workspace-shell');
+
+            if (!state.user || state.authMode === 'unauthenticated') {
+                authGate.classList.remove('hidden');
+                lockScreen.classList.add('hidden');
+                workspace.classList.add('hidden');
+                renderAuthGate();
+                return;
+            }
+
+            authGate.classList.add('hidden');
+            workspace.classList.remove('hidden');
+
+            if (state.isLocked && state.pinHash) {
+                lockScreen.classList.remove('hidden');
+                renderLockScreen();
+            } else {
+                lockScreen.classList.add('hidden');
+            }
+
+            renderAll();
+        }
+
+        // ==========================================
+        // 8. PRIVACY & SECURITY SHIELD MODAL
+        // ==========================================
+        window.openPrivacyShieldModal = function(focusPinSetup = false) {
+            if (!state.user) return;
+            const uid = state.user.uid;
+            const hasPin = Boolean(state.pinHash);
+
+            openModal(`
+                <div class="w-full bg-[#111318] rounded-t-[2rem] sm:rounded-3xl sm:m-4 p-5 pb-safe border-t sm:border border-[#1E222B] shadow-2xl animate-sheet-up max-h-[92dvh] overflow-y-auto obsidian-scroll space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 flex items-center justify-center">
+                                <i data-lucide="shield-check" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-extrabold text-[#F3F4F6]">Privacy &amp; Security Shield</h3>
+                                <p class="text-[10px] font-mono text-emerald-400">${state.authMode === 'device-only' ? '100% On-Device Isolated' : 'End-to-End UID Isolated'}</p>
+                            </div>
+                        </div>
+                        <button onclick="closeModal()" class="p-2 rounded-full bg-[#1E222B] text-[#8B92A5]"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+
+                    <!-- Identity & Storage Isolation Card -->
+                    <div class="p-3.5 rounded-2xl bg-[#09090B] border border-[#1E222B] space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-[#8B92A5]">Account</span>
+                            <span class="text-xs font-bold text-[#F3F4F6] truncate">${escapeHtml(state.user.email)}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-[#8B92A5]">Private UID</span>
+                            <button onclick="copyTextSafe('${escapeHtml(uid)}', 'Private UID copied')" class="text-[11px] font-mono text-indigo-400 hover:underline truncate max-w-[210px]" title="Tap to copy full UID">${escapeHtml(uid)}</button>
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-[#8B92A5]">File Vault DB</span>
+                            <span class="text-[10px] font-mono text-sky-400 truncate max-w-[210px]">studyos_vault_${escapeHtml(uid.slice(0, 12))}...</span>
+                        </div>
+                    </div>
+
+                    <!-- 4-Digit App Lock PIN Section -->
+                    <div class="p-4 rounded-2xl bg-[#09090B] border ${focusPinSetup ? 'border-indigo-500/60' : 'border-[#1E222B]'} space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="text-xs font-extrabold text-[#F3F4F6] flex items-center gap-1.5">
+                                    <i data-lucide="key-round" class="w-3.5 h-3.5 text-indigo-400"></i>
+                                    <span>4-Digit App Lock PIN</span>
+                                </h4>
+                                <p class="text-[11px] text-[#8B92A5] mt-0.5">Hashed locally with Web Crypto SHA-256</p>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold ${hasPin ? 'bg-emerald-500/15 text-emerald-400' : 'bg-[#1E222B] text-[#8B92A5]'}">
+                                ${hasPin ? 'ACTIVE' : 'OFF'}
+                            </span>
+                        </div>
+
+                        <form id="pin-setup-form" class="flex items-center gap-2">
+                            <input
+                                id="new-pin-input"
+                                type="password"
+                                inputmode="numeric"
+                                pattern="[0-9]{4}"
+                                maxlength="4"
+                                placeholder="${hasPin ? 'New 4-digit PIN' : 'Enter 4-digit PIN'}"
+                                class="flex-1 px-3 py-2 rounded-xl bg-[#111318] border border-[#1E222B] text-xs font-mono tracking-widest text-[#F3F4F6] focus:outline-none focus:border-indigo-500"
+                            />
+                            <button type="submit" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shrink-0">
+                                ${hasPin ? 'Update' : 'Enable PIN'}
+                            </button>
+                            ${hasPin ? `
+                                <button type="button" id="disable-pin-btn" class="px-2.5 py-2 rounded-xl bg-rose-500/15 text-rose-400 text-xs font-bold shrink-0">
+                                    Off
+                                </button>
+                            ` : ''}
+                        </form>
+
+                        <label class="flex items-center justify-between pt-2 border-t border-[#1E222B] cursor-pointer">
+                            <span class="text-xs font-semibold text-[#D1D5DB]">Auto-Lock when switching apps/tabs</span>
+                            <input id="autolock-toggle" type="checkbox" ${state.autoLockOnBlur ? 'checked' : ''} class="w-4 h-4 accent-indigo-600 rounded" />
+                        </label>
+                    </div>
+
+                    <!-- Personal .JSON Backup & Local Cache Controls -->
+                    <div class="space-y-2">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" onclick="exportWorkspaceJson()" class="py-2.5 px-3 rounded-xl bg-[#1E222B] hover:bg-[#272C38] text-xs font-bold text-[#F3F4F6] flex items-center justify-center gap-1.5 transition">
+                                <i data-lucide="download" class="w-3.5 h-3.5 text-sky-400"></i> Export .JSON
+                            </button>
+                            <label class="py-2.5 px-3 rounded-xl bg-[#1E222B] hover:bg-[#272C38] text-xs font-bold text-[#F3F4F6] flex items-center justify-center gap-1.5 cursor-pointer transition">
+                                <input type="file" accept=".json,application/json" onchange="importWorkspaceJson(event)" class="hidden" />
+                                <i data-lucide="upload" class="w-3.5 h-3.5 text-emerald-400"></i> Import .JSON
+                            </label>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" id="clear-cache-btn" class="py-2.5 px-3 rounded-xl bg-[#09090B] border border-[#1E222B] hover:border-amber-500/40 text-xs font-semibold text-amber-400 flex items-center justify-center gap-1.5 transition">
+                                <i data-lucide="eraser" class="w-3.5 h-3.5"></i> Clear Local Cache
+                            </button>
+                            <button type="button" onclick="handleSignOut()" class="py-2.5 px-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-xs font-bold text-rose-400 flex items-center justify-center gap-1.5 transition">
+                                <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Sign Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `);
+
+            // Set / Update PIN
+            document.getElementById('pin-setup-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const val = document.getElementById('new-pin-input').value.trim();
+                if (!/^\d{4}$/.test(val)) {
+                    showToast('Enter exactly 4 digits (0-9)', 'amber');
+                    return;
+                }
+                state.pinHash = await sha256Hex(val);
+                await saveUserSecurityPrefs(uid);
+                renderHeader();
+                openPrivacyShieldModal(false);
+                showToast('4-digit App Lock PIN enabled', 'emerald');
+            };
+
+            // Disable PIN
+            const disableBtn = document.getElementById('disable-pin-btn');
+            if (disableBtn) {
+                disableBtn.onclick = async () => {
+                    state.pinHash = null;
+                    state.isLocked = false;
+                    await saveUserSecurityPrefs(uid);
+                    renderHeader();
+                    openPrivacyShieldModal(false);
+                    showToast('App Lock PIN disabled', 'indigo');
+                };
+            }
+
+            // Auto-Lock Toggle
+            document.getElementById('autolock-toggle').onchange = async (e) => {
+                state.autoLockOnBlur = e.target.checked;
+                await saveUserSecurityPrefs(uid);
+                showToast(state.autoLockOnBlur ? 'Auto-Lock on tab switch enabled' : 'Auto-Lock disabled', 'indigo');
+            };
+
+            // Clear Local Cache
+            document.getElementById('clear-cache-btn').onclick = () => {
+                confirmAction({
+                    title: 'Clear Local Cache?',
+                    message: 'Wipes cached binary files in IndexedDB on this device. Cloud records remain safe.',
+                    confirmText: 'Clear Cache',
+                    onConfirm: async () => {
+                        state.memoryFileCache = {};
+                        await clearScopedVaultIDB(uid);
+                        showToast('Local device cache cleared', 'emerald');
+                    }
+                });
+            };
+        };
+
+        window.exportWorkspaceJson = function() {
+            if (!state.user) return;
+            const backup = {
+                app: 'StudyOS',
+                exportedAt: new Date().toISOString(),
+                uid: state.user.uid,
+                modules: state.modules,
+                notes: state.notes,
+                tasks: state.tasks,
+                flashcards: state.flashcards,
+                vaultItems: state.vaultItems.map(({ dataUrl, ...meta }) => meta),
+                stats: state.stats
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `StudyOS_Private_Backup_${getTodayKey()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Private .JSON backup exported', 'emerald');
+        };
+
+        window.importWorkspaceJson = function(e) {
+            const file = e.target.files?.[0];
+            if (!file || !state.user) return;
+            const reader = new FileReader();
+            reader.onload = async () => {
+                try {
+                    const parsed = JSON.parse(reader.result);
+                    const cols = ['modules', 'notes', 'tasks', 'flashcards', 'vaultItems', 'stats'];
+                    let restoredCount = 0;
+                    for (const col of cols) {
+                        if (Array.isArray(parsed[col])) {
+                            for (const item of parsed[col]) {
+                                if (item && item.id) {
+                                    await upsertDoc(col, item);
+                                    restoredCount++;
+                                }
+                            }
+                        }
+                    }
+                    closeModal();
+                    showToast(`Restored ${restoredCount} records`, 'emerald');
+                } catch (err) {
+                    showToast('Invalid StudyOS .JSON file', 'rose');
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        // ==========================================
+        // 9. TOASTS, CLIPBOARD & CONFIRM DIALOG
+        // ==========================================
+        window.showToast = function(msg, tone = 'indigo') {
+            const stack = document.getElementById('toast-stack');
+            if (!stack) return;
+            const styles = {
+                indigo: 'bg-[#1E222B] border-indigo-500/40 text-indigo-300',
+                emerald: 'bg-[#1E222B] border-emerald-500/40 text-emerald-300',
+                amber: 'bg-[#1E222B] border-amber-500/40 text-amber-300',
+                rose: 'bg-[#1E222B] border-rose-500/40 text-rose-300'
+            };
+            const el = document.createElement('div');
+            el.className = `pointer-events-auto px-3.5 py-2 rounded-xl border shadow-xl text-xs font-semibold flex items-center gap-2 animate-modal-pop ${styles[tone] || styles.indigo}`;
+            el.innerHTML = `<span>${escapeHtml(msg)}</span>`;
+            stack.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transition = 'opacity 0.2s ease';
+                setTimeout(() => el.remove(), 220);
+            }, 2200);
+        };
+
+        window.copyTextSafe = function(text, feedback = 'Copied to clipboard') {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast(feedback, 'emerald');
+            } catch (e) {
+                showToast('Copy failed', 'rose');
+            }
+        };
+
+        window.confirmAction = function({ title, message, confirmText = 'Delete', onConfirm }) {
+            openModal(`
+                <div class="m-4 p-5 rounded-3xl bg-[#111318] border border-[#1E222B] shadow-2xl animate-modal-pop">
+                    <h3 class="text-base font-bold text-[#F3F4F6]">${escapeHtml(title)}</h3>
+                    <p class="text-xs text-[#8B92A5] mt-1.5 leading-relaxed">${escapeHtml(message)}</p>
+                    <div class="grid grid-cols-2 gap-2.5 mt-5">
+                        <button onclick="closeModal()" class="py-2.5 px-4 rounded-xl bg-[#1E222B] text-xs font-semibold text-[#F3F4F6] hover:bg-[#272C38] transition">Cancel</button>
+                        <button id="confirm-yes-btn" class="py-2.5 px-4 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-500 transition">${escapeHtml(confirmText)}</button>
+                    </div>
+                </div>
+            `);
+            document.getElementById('confirm-yes-btn').onclick = () => {
+                closeModal();
+                onConfirm();
+            };
+        };
+
+        window.openModal = function(innerHtml) {
+            const backdrop = document.getElementById('modal-backdrop');
+            if (!backdrop) return;
+            backdrop.innerHTML = innerHtml;
+            backdrop.classList.remove('hidden');
+            backdrop.onclick = (e) => {
+                if (e.target === backdrop) closeModal();
+            };
+            lucide.createIcons();
+        };
+
+        window.closeModal = function() {
+            const backdrop = document.getElementById('modal-backdrop');
+            if (!backdrop) return;
+            backdrop.classList.add('hidden');
+            backdrop.innerHTML = '';
+        };
+
+        // ==========================================
+        // 10. WEB AUDIO API SYNTHESIZED POMODORO CHIME
+        // ==========================================
+        function playCompletionChime() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const now = ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99];
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.16);
+                    gain.gain.setValueAtTime(0.0001, now + idx * 0.16);
+                    gain.gain.exponentialRampToValueAtTime(0.16, now + idx * 0.16 + 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.16 + 0.85);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + idx * 0.16);
+                    osc.stop(now + idx * 0.16 + 0.9);
+                });
+            } catch (e) {}
+        }
+
+        // ==========================================
+        // 11. NAVIGATION & HEADER RENDERING
+        // ==========================================
+        window.switchMainTab = function(tab) {
+            state.activeTab = tab;
+            if (tab !== 'modules') {
+                state.selectedModuleId = null;
+            }
+            document.querySelectorAll('.nav-btn').forEach((btn) => {
+                const isTarget = btn.getAttribute('data-nav') === tab;
+                btn.className = isTarget
+                    ? 'nav-btn flex flex-col items-center justify-center py-2 px-2 rounded-2xl transition-all active:scale-95 bg-indigo-500/15 text-indigo-400'
+                    : 'nav-btn flex flex-col items-center justify-center py-2 px-2 rounded-2xl transition-all active:scale-95 text-[#8B92A5] hover:text-[#F3F4F6]';
+                btn.querySelector('span').className = isTarget
+                    ? 'text-[11px] font-bold tracking-tight'
+                    : 'text-[11px] font-semibold tracking-tight';
+            });
+            const vp = document.getElementById('main-viewport');
+            if (vp) vp.scrollTop = 0;
+            renderAll();
+        };
+
+        function renderHeader() {
+            const header = document.getElementById('app-header');
+            if (!header || !state.user) return;
+
+            const isDeviceOnly = state.authMode === 'device-only';
+            const dotClass = isDeviceOnly ? 'bg-emerald-400' : 'bg-indigo-400';
+
+            // Contextual Header when inside a Subject/Module
+            if (state.activeTab === 'modules' && state.selectedModuleId) {
+                const mod = state.modules.find(m => m.id === state.selectedModuleId);
+                if (mod) {
+                    const acc = MODULE_ACCENTS[mod.accent] || MODULE_ACCENTS.indigo;
+                    header.innerHTML = `
+                        <div class="flex items-center justify-between gap-2 pt-0.5">
+                            <button onclick="exitModuleView()" class="flex items-center gap-1.5 py-1.5 px-2.5 -ml-2 rounded-xl text-xs font-bold text-[#8B92A5] hover:text-[#F3F4F6] hover:bg-[#111318] transition active:scale-95">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                                <span>Modules</span>
+                            </button>
+                            <div class="flex items-center gap-1.5">
+                                <span class="px-2 py-0.5 rounded-md border text-[10px] font-mono font-bold ${acc.badge}">${escapeHtml(mod.code || 'MOD')}</span>
+                                <button onclick="openModuleModal('${mod.id}')" title="Edit Module" class="p-2 rounded-xl bg-[#111318] border border-[#1E222B] text-[#8B92A5] hover:text-[#F3F4F6] transition">
+                                    <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="engageInstantLock()" title="${state.pinHash ? 'Lock App Now' : 'Set 4-Digit App Lock PIN'}" class="p-2 rounded-xl bg-[#111318] border border-[#1E222B] ${state.pinHash ? 'text-indigo-400' : 'text-[#8B92A5]'} hover:text-[#F3F4F6] transition">
+                                    <i data-lucide="${state.pinHash ? 'lock' : 'unlock'}" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-1.5">
+                            <h1 class="text-base font-extrabold text-[#F3F4F6] tracking-tight truncate">${escapeHtml(mod.title)}</h1>
+                            ${mod.subtitle ? `<p class="text-[11px] text-[#8B92A5] truncate mt-0.5">${escapeHtml(mod.subtitle)}</p>` : ''}
+                        </div>
+                    `;
+                    return;
+                }
+            }
+
+            const subtitles = {
+                modules: 'Private Subject Workspace',
+                tasks: 'Decoupled Action List',
+                focus: 'Deep Study & Active Recall'
+            };
+
+            header.innerHTML = `
+                <div class="flex items-center justify-between gap-2 pt-0.5">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-500 flex items-center justify-center text-white font-mono font-extrabold text-xs shadow-md shadow-indigo-500/20 shrink-0">
+                            OS
+                        </div>
+                        <div class="min-w-0">
+                            <h1 class="text-base font-extrabold tracking-tight text-[#F3F4F6]">StudyOS</h1>
+                            <p class="text-[11px] text-[#8B92A5] truncate">${subtitles[state.activeTab]}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <!-- 1-Tap Padlock Instant Lock Button -->
+                        <button onclick="engageInstantLock()" title="${state.pinHash ? 'Lock Workspace Now' : 'Set 4-Digit Privacy PIN'}" class="p-2 rounded-xl bg-[#111318] border border-[#1E222B] hover:border-indigo-500/40 ${state.pinHash ? 'text-indigo-400' : 'text-[#8B92A5]'} active:scale-95 transition">
+                            <i data-lucide="${state.pinHash ? 'lock' : 'unlock'}" class="w-4 h-4"></i>
+                        </button>
+
+                        <!-- Privacy & Security Shield Trigger -->
+                        <button onclick="openPrivacyShieldModal(false)" title="Privacy & Security Shield" class="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-[#111318] border border-[#1E222B] hover:border-emerald-500/40 text-xs font-semibold text-[#F3F4F6] active:scale-95 transition">
+                            <span class="w-2 h-2 rounded-full ${dotClass}"></span>
+                            <span class="text-[11px] text-[#8B92A5]">${isDeviceOnly ? 'Offline' : 'Private'}</span>
+                            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAll() {
+            if (!state.user) return;
+            renderHeader();
+            const vp = document.getElementById('main-viewport');
+            if (!vp) return;
+
+            if (state.activeTab === 'modules') {
+                vp.innerHTML = state.selectedModuleId ? renderInsideModuleView() : renderModulesHomeView();
+            } else if (state.activeTab === 'tasks') {
+                vp.innerHTML = renderTasksView();
+            } else if (state.activeTab === 'focus') {
+                vp.innerHTML = renderFocusAndQuizView();
+            }
+
+            lucide.createIcons();
+        }
+
+        // ==========================================
+        // 12. TAB 1: MODULES (SUBJECTS, NOTES & VAULT)
+        // ==========================================
+        window.openModuleView = function(moduleId) {
+            state.selectedModuleId = moduleId;
+            state.moduleSubTab = 'notes';
+            state.noteCategoryFilter = 'All';
+            state.vaultTypeFilter = 'All';
+            const vp = document.getElementById('main-viewport');
+            if (vp) vp.scrollTop = 0;
+            renderAll();
+        };
+
+        window.exitModuleView = function() {
+            state.selectedModuleId = null;
+            renderAll();
+        };
+
+        window.handleModuleGlobalSearch = function(val) {
+            state.globalSearch = val;
+            renderAll();
+        };
+
+        window.clearModuleGlobalSearch = function() {
+            state.globalSearch = '';
+            renderAll();
+        };
+
+        function renderModulesHomeView() {
+            const q = state.globalSearch.trim().toLowerCase();
+
+            let html = `
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-[#8B92A5] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                    <input
+                        type="text"
+                        value="${escapeHtml(state.globalSearch)}"
+                        oninput="handleModuleGlobalSearch(this.value)"
+                        placeholder="Search your private notes & vault..."
+                        class="w-full pl-9 pr-9 py-2.5 rounded-2xl bg-[#111318] border border-[#1E222B] text-xs text-[#F3F4F6] placeholder-[#8B92A5] focus:outline-none focus:border-indigo-500 transition"
+                    />
+                    ${state.globalSearch ? `
+                        <button onclick="clearModuleGlobalSearch()" class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-[#8B92A5] hover:text-[#F3F4F6]">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+
+            if (q.length > 0) {
+                const matchedNotes = state.notes.filter(n =>
+                    (n.title || '').toLowerCase().includes(q) ||
+                    (n.content || '').toLowerCase().includes(q) ||
+                    (n.category || '').toLowerCase().includes(q)
+                );
+                const matchedVault = state.vaultItems.filter(v =>
+                    (v.title || '').toLowerCase().includes(q) ||
+                    (v.tag || '').toLowerCase().includes(q) ||
+                    (v.content || '').toLowerCase().includes(q) ||
+                    (v.fileName || '').toLowerCase().includes(q)
+                );
+
+                if (matchedNotes.length === 0 && matchedVault.length === 0) {
+                    html += `
+                        <div class="py-14 text-center">
+                            <p class="text-xs font-semibold text-[#8B92A5]">No notes or vault items matching "${escapeHtml(state.globalSearch)}"</p>
+                        </div>
+                    `;
+                    return html;
+                }
+
+                if (matchedNotes.length > 0) {
+                    html += `<div class="space-y-2"><h3 class="text-[11px] font-bold uppercase tracking-wider text-[#8B92A5]">Matching Notes (${matchedNotes.length})</h3>`;
+                    matchedNotes.forEach(note => {
+                        const mod = state.modules.find(m => m.id === note.moduleId);
+                        const catBadge = NOTE_TYPE_BADGES[note.category] || NOTE_TYPE_BADGES.Cours;
+                        html += `
+                            <div onclick="openNoteModal('${note.id}', 'read')" class="p-3.5 rounded-2xl bg-[#111318] border border-[#1E222B] hover:border-indigo-500/40 cursor-pointer transition">
+                                <div class="flex items-center justify-between gap-2 mb-1">
+                                    <span class="text-[10px] font-mono text-[#8B92A5] truncate">${escapeHtml(mod?.code || 'MOD')} • ${escapeHtml(mod?.title || '')}</span>
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${catBadge}">${escapeHtml(note.category)}</span>
+                                </div>
+                                <p class="text-xs font-bold text-[#F3F4F6] truncate">${escapeHtml(note.title)}</p>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+
+                if (matchedVault.length > 0) {
+                    html += `<div class="space-y-2"><h3 class="text-[11px] font-bold uppercase tracking-wider text-[#8B92A5]">Matching Vault Resources (${matchedVault.length})</h3>`;
+                    matchedVault.forEach(item => {
+                        const mod = state.modules.find(m => m.id === item.moduleId);
+                        html += `
+                            <div onclick="openVaultItemViewer('${item.id}')" class="p-3.5 rounded-2xl bg-[#111318] border border-[#1E222B] hover:border-indigo-500/40 flex items-center justify-between gap-2 cursor-pointer transition">
+                                <div class="min-w-0">
+                                    <p class="text-[10px] font-mono text-[#8B92A5] truncate">${escapeHtml(mod?.code || 'MOD')} • ${escapeHtml(item.tag || item.type)}</p>
+                                    <p class="text-xs font-bold text-[#F3F4F6] truncate mt-0.5">${escapeHtml(item.title)}</p>
+                                </div>
+                                <i data-lucide="arrow-up-right" class="w-4 h-4 text-[#8B92A5] shrink-0"></i>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+
+                return html;
+            }
+
+            html += `
+                <div class="flex items-center justify-between pt-1">
+                    <h2 class="text-xs font-extrabold uppercase tracking-wider text-[#8B92A5]">Modules (${state.modules.length})</h2>
+                    <button onclick="openModuleModal()" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1 transition active:scale-95">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Module
+                    </button>
+                </div>
+            `;
+
+            if (state.modules.length === 0) {
+                html += `
+                    <div class="p-6 rounded-3xl bg-[#111318] border border-dashed border-[#1E222B] text-center">
+                        <p class="text-xs font-bold text-[#F3F4F6]">No modules yet</p>
+                        <p class="text-[11px] text-[#8B92A5] mt-1">Create your first engineering subject to organize Cours, TD, TP notes and PDFs.</p>
+                        <button onclick="openModuleModal()" class="mt-3 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">+ Add Module</button>
+                    </div>
+                `;
+                return html;
+            }
+
+            html += `<div class="space-y-2.5">`;
+            state.modules.forEach(mod => {
+                const modNotes = state.notes.filter(n => n.moduleId === mod.id);
+                const coursCount = modNotes.filter(n => n.category === 'Cours').length;
+                const tdCount = modNotes.filter(n => n.category === 'TD').length;
+                const tpCount = modNotes.filter(n => n.category === 'TP').length;
+                const vaultCount = state.vaultItems.filter(v => v.moduleId === mod.id).length;
+                const acc = MODULE_ACCENTS[mod.accent] || MODULE_ACCENTS.indigo;
+
+                html += `
+                    <div onclick="openModuleView('${mod.id}')" class="group p-4 rounded-2xl bg-[#111318] border border-[#1E222B] hover:border-indigo-500/40 cursor-pointer active:scale-[0.99] transition relative overflow-hidden">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full ${acc.dot} shrink-0"></span>
+                                    <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-[#8B92A5]">${escapeHtml(mod.code || 'MODULE')}</span>
+                                </div>
+                                <h3 class="text-sm font-extrabold text-[#F3F4F6] mt-1 truncate">${escapeHtml(mod.title)}</h3>
+                                ${mod.subtitle ? `<p class="text-[11px] text-[#8B92A5] truncate mt-0.5">${escapeHtml(mod.subtitle)}</p>` : ''}
+                            </div>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-[#8B92A5] group-hover:text-indigo-400 transition shrink-0 mt-1"></i>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-2 mt-3.5 pt-3 border-t border-[#1E222B]/80">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-sky-500/10 text-sky-400 tabular-nums">${coursCount} Cours</span>
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-500/10 text-amber-400 tabular-nums">${tdCount} TD</span>
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 tabular-nums">${tpCount} TP</span>
+                            </div>
+                            <span class="text-[11px] font-mono text-[#8B92A5] flex items-center gap-1 shrink-0 tabular-nums">
+                                <i data-lucide="folder-lock" class="w-3 h-3 text-indigo-400"></i> ${vaultCount}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+
+            return html;
+        }
+
+        window.switchModuleSubTab = function(subTab) {
+            state.moduleSubTab = subTab;
+            renderAll();
+        };
+
+        window.setNoteCategoryFilter = function(cat) {
+            state.noteCategoryFilter = cat;
+            renderAll();
+        };
+
+        window.setVaultTypeFilter = function(type) {
+            state.vaultTypeFilter = type;
+            renderAll();
+        };
+
+        function renderInsideModuleView() {
+            const mod = state.modules.find(m => m.id === state.selectedModuleId);
+            if (!mod) {
+                state.selectedModuleId = null;
+                return renderModulesHomeView();
+            }
+
+            const modNotes = state.notes.filter(n => n.moduleId === mod.id);
+            const modVault = state.vaultItems.filter(v => v.moduleId === mod.id);
+
+            let html = `
+                <div class="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-[#111318] border border-[#1E222B]">
+                    <button onclick="switchModuleSubTab('notes')" class="py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                        state.moduleSubTab === 'notes'
+                            ? 'bg-indigo-600 text-white shadow-xs'
+                            : 'text-[#8B92A5] hover:text-[#F3F4F6]'
+                    }">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                        <span>Notes (${modNotes.length})</span>
+                    </button>
+
+                    <button onclick="switchModuleSubTab('vault')" class="py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                        state.moduleSubTab === 'vault'
+                            ? 'bg-indigo-600 text-white shadow-xs'
+                            : 'text-[#8B92A5] hover:text-[#F3F4F6]'
+                    }">
+                        <i data-lucide="folder-lock" class="w-3.5 h-3.5"></i>
+                        <span>Vault (${modVault.length})</span>
+                    </button>
+                </div>
+            `;
+
+            if (state.moduleSubTab === 'notes') {
+                const categories = ['All', 'Cours', 'TD', 'TP'];
+                let filteredNotes = [...modNotes];
+                if (state.noteCategoryFilter !== 'All') {
+                    filteredNotes = filteredNotes.filter(n => n.category === state.noteCategoryFilter);
+                }
+                filteredNotes.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+                html += `
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                            ${categories.map(cat => {
+                                const count = cat === 'All' ? modNotes.length : modNotes.filter(n => n.category === cat).length;
+                                const active = state.noteCategoryFilter === cat;
+                                return `
+                                    <button onclick="setNoteCategoryFilter('${cat}')" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition tabular-nums ${
+                                        active
+                                            ? 'bg-[#F3F4F6] text-[#09090B]'
+                                            : 'bg-[#111318] border border-[#1E222B] text-[#8B92A5] hover:text-[#F3F4F6]'
+                                    }">${cat} <span class="opacity-70">(${count})</span></button>
+                                `;
+                            }).join('')}
+                        </div>
+
+                        <button onclick="openNoteModal(null, 'edit')" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1 shrink-0 transition active:scale-95">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Note
+                        </button>
+                    </div>
+                `;
+
+                if (filteredNotes.length === 0) {
+                    html += `
+                        <div class="p-6 rounded-3xl bg-[#111318] border border-dashed border-[#1E222B] text-center mt-2">
+                            <i data-lucide="file-plus" class="w-6 h-6 mx-auto text-[#8B92A5] mb-2"></i>
+                            <p class="text-xs font-bold text-[#F3F4F6]">No ${state.noteCategoryFilter === 'All' ? '' : state.noteCategoryFilter + ' '}notes yet</p>
+                            <p class="text-[11px] text-[#8B92A5] mt-1">Tap "+ Note" to write lecture notes, formulas, or CLI snippets.</p>
+                        </div>
+                    `;
+                } else {
+                    html += `<div class="space-y-2.5">`;
+                    filteredNotes.forEach(note => {
+                        const badgeCls = NOTE_TYPE_BADGES[note.category] || NOTE_TYPE_BADGES.Cours;
+                        const cleanPreview = (note.content || '')
+                            .replace(/```[\s\S]*?```/g, '[Code/CLI Block]')
+                            .replace(/\[\[(formula|trick):/gi, '')
+                            .replace(/\]\]/g, '')
+                            .replace(/^#+\s*/gm, '')
+                            .trim();
+
+                        html += `
+                            <div onclick="openNoteModal('${note.id}', 'read')" class="p-4 rounded-2xl bg-[#111318] border border-[#1E222B] hover:border-indigo-500/40 cursor-pointer active:scale-[0.99] transition">
+                                <div class="flex items-center justify-between gap-2 mb-1.5">
+                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${badgeCls}">${escapeHtml(note.category)}</span>
+                                    <span class="text-[10px] font-mono text-[#8B92A5]">${formatRelativeTime(note.updatedAt)}</span>
+                                </div>
+                                <h4 class="text-sm font-bold text-[#F3F4F6] leading-snug">${escapeHtml(note.title)}</h4>
+                                <p class="text-xs text-[#8B92A5] line-clamp-2 mt-1.5 leading-relaxed">${escapeHtml(cleanPreview)}</p>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+            } else {
+                let filteredVault = [...modVault];
+                if (state.vaultTypeFilter !== 'All') {
+                    filteredVault = filteredVault.filter(v => v.type === state.vaultTypeFilter);
+                }
+                filteredVault.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+                html += `
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                            ${[
+                                { id: 'All', label: 'All' },
+                                { id: 'file', label: 'Files' },
+                                { id: 'link', label: 'Links' },
+                                { id: 'snippet', label: 'Snippets' }
+                            ].map(t => `
+                                <button onclick="setVaultTypeFilter('${t.id}')" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition ${
+                                    state.vaultTypeFilter === t.id
+                                        ? 'bg-[#F3F4F6] text-[#09090B]'
+                                        : 'bg-[#111318] border border-[#1E222B] text-[#8B92A5] hover:text-[#F3F4F6]'
+                                }">${t.label}</button>
+                            `).join('')}
+                        </div>
+
+                        <button onclick="openAddVaultModal('${mod.id}')" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1 shrink-0 transition active:scale-95">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
+                        </button>
+                    </div>
+                `;
+
+                if (filteredVault.length === 0) {
+                    html += `
+                        <div class="p-6 rounded-3xl bg-[#111318] border border-dashed border-[#1E222B] text-center mt-2">
+                            <i data-lucide="folder-up" class="w-6 h-6 mx-auto text-[#8B92A5] mb-2"></i>
+                            <p class="text-xs font-bold text-[#F3F4F6]">Subject Vault is empty</p>
+                            <p class="text-[11px] text-[#8B92A5] mt-1">Local PDFs &amp; images stay strictly on your phone inside your private UID store.</p>
+                        </div>
+                    `;
+                } else {
+                    html += `<div class="space-y-2.5">`;
+                    filteredVault.forEach(item => {
+                        const icon = item.type === 'file'
+                            ? (item.mimeType?.startsWith('image/') ? 'image' : 'file-text')
+                            : item.type === 'link' ? 'external-link' : 'terminal';
+
+                        html += `
+                            <div onclick="openVaultItemViewer('${item.id}')" class="p-3.5 rounded-2xl bg-[#111318] border border-[#1E222B] hover:border-indigo-500/40 flex items-center gap-3 cursor-pointer active:scale-[0.99] transition">
+                                <div class="w-10 h-10 rounded-xl bg-[#1E222B] text-indigo-400 flex items-center justify-center shrink-0">
+                                    <i data-lucide="${icon}" class="w-4 h-4"></i>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs font-bold text-[#F3F4F6] truncate">${escapeHtml(item.title)}</p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="px-2 py-0.5 rounded-md bg-[#1E222B] text-[10px] font-mono text-sky-400">${escapeHtml(item.tag || item.type)}</span>
+                                        ${item.fileSize ? `<span class="text-[10px] font-mono text-[#8B92A5]">${formatBytes(item.fileSize)}</span>` : ''}
+                                    </div>
+                                </div>
+                                ${item.type === 'snippet' ? `
+                                    <button onclick="event.stopPropagation(); copyVaultSnippet('${item.id}')" class="px-2.5 py-1.5 rounded-xl bg-[#1E222B] hover:bg-[#272C38] text-[11px] font-bold text-[#F3F4F6] flex items-center gap-1 shrink-0">
+                                        <i data-lucide="copy" class="w-3 h-3 text-indigo-400"></i> Copy
+                                    </button>
+                                ` : `
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-[#8B92A5] shrink-0"></i>
+                                `}
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+            }
+
+            return html;
+        }
+
+        window.copyVaultSnippet = function(itemId) {
+            const item = state.vaultItems.find(v => v.id === itemId);
+            if (item && item.content) {
+                copyTextSafe(item.content, 'Snippet copied');
+            }
+        };
+
+        // ==========================================
+        // 13. NOTE READER & DISTRACTION-FREE EDITOR
+        // ==========================================
+        function renderFormattedNoteHtml(rawText) {
+            const escaped = escapeHtml(rawText || '');
+            const codeBlocks = [];
+            let processed = escaped.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+                const idx = codeBlocks.length;
+                const cleanCode = code.replace(/\n$/, '');
+                codeBlocks.push({ lang: lang || 'code', code: cleanCode });
+                return `@@CODEBLOCK_${idx}@@`;
+            });
+
+            processed = processed.replace(/\[\[formula:\s*([\s\S]*?)\]\]/gi, (_, expr) => {
+                return `<div class="my-3 p-3 rounded-xl bg-sky-500/10 border border-sky-500/25 font-mono text-xs text-sky-300 flex items-center gap-2"><span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-[10px] font-bold uppercase tracking-wider text-sky-300 shrink-0">Formula</span><span>${expr.trim()}</span></div>`;
+            });
+
+            processed = processed.replace(/\[\[trick:\s*([\s\S]*?)\]\]/gi, (_, tip) => {
+                return `<div class="my-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-200/95 leading-relaxed"><div class="flex items-center gap-1.5 font-bold text-amber-400 text-[11px] uppercase tracking-wider mb-1"><span>⚡ Exam Trick</span></div><div>${tip.trim()}</div></div>`;
+            });
+
+            processed = processed.replace(/^##\s+(.+)$/gm, '<h3 class="text-sm font-extrabold text-[#F3F4F6] mt-4 mb-1.5 tracking-tight">$1</h3>');
+            processed = processed.replace(/^#\s+(.+)$/gm, '<h2 class="text-base font-extrabold text-[#F3F4F6] mt-4 mb-2 tracking-tight">$1</h2>');
+            processed = processed.replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-[#F3F4F6]">$1</strong>');
+            processed = processed.replace(/`([^`\n]+)`/g, '<code class="px-1.5 py-0.5 rounded-md bg-[#1E222B] font-mono text-[11px] text-sky-300">$1</code>');
+            processed = processed.replace(/^(?:•|-)\s+(.+)$/gm, '<div class="flex items-start gap-2 my-1 pl-1"><span class="text-indigo-400 font-bold">•</span><span class="flex-1">$1</span></div>');
+
+            processed = processed.replace(/@@CODEBLOCK_(\d+)@@/g, (_, idxStr) => {
+                const block = codeBlocks[Number(idxStr)];
+                return `
+                    <div class="my-3 rounded-xl bg-[#07080A] border border-[#1E222B] overflow-hidden">
+                        <div class="px-3 py-1.5 bg-[#111318] border-b border-[#1E222B] flex items-center justify-between">
+                            <span class="text-[10px] font-mono uppercase tracking-wider text-[#8B92A5]">${escapeHtml(block.lang)}</span>
+                            <button type="button" onclick="copyCodeBlockFromBtn(this)" class="text-[10px] font-bold text-indigo-400 hover:text-indigo-300">Copy</button>
+                        </div>
+                        <pre class="p-3 text-[11px] font-mono text-emerald-300/95 overflow-x-auto leading-relaxed"><code>${block.code}</code></pre>
+                    </div>
+                `;
+            });
+
+            return `<div class="text-xs text-[#D1D5DB] leading-relaxed whitespace-pre-line">${processed}</div>`;
+        }
+
+        window.copyCodeBlockFromBtn = function(btn) {
+            const pre = btn.closest('div').nextElementSibling;
+            if (pre) {
+                copyTextSafe(pre.textContent, 'Code block copied');
+            }
+        };
+
+        window.openNoteModal = function(noteId = null, initialMode = 'edit') {
+            const existing = noteId ? state.notes.find(n => n.id === noteId) : null;
+            const targetModuleId = existing ? existing.moduleId : (state.selectedModuleId || state.modules[0]?.id || 'mod_net');
+            let mode = existing ? initialMode : 'edit';
+            let draftTitle = existing?.title || '';
+            let draftCategory = existing?.category || 'Cours';
+            let draftContent = existing?.content || '';
+
+            function renderNoteOverlay() {
+                const badgeCls = NOTE_TYPE_BADGES[draftCategory] || NOTE_TYPE_BADGES.Cours;
+
+                openModal(`
+                    <div class="w-full h-full sm:h-[94%] sm:m-3 bg-[#09090B] sm:rounded-3xl sm:border sm:border-[#1E222B] flex flex-col overflow-hidden animate-sheet-up">
+                        <div class="pt-safe px-4 py-3 border-b border-[#1E222B] flex items-center justify-between gap-2 shrink-0 bg-[#09090B]">
+                            <button type="button" onclick="closeModal()" class="py-1.5 px-2.5 rounded-xl bg-[#111318] border border-[#1E222B] text-xs font-bold text-[#8B92A5] hover:text-[#F3F4F6] flex items-center gap-1">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i> Close
+                            </button>
+
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" id="note-make-fc-btn" class="px-2.5 py-1.5 rounded-xl bg-sky-500/10 border border-sky-500/25 text-sky-400 text-[11px] font-bold flex items-center gap-1 hover:bg-sky-500/20 transition" title="Create Flashcard from this Note">
+                                    <i data-lucide="layers" class="w-3.5 h-3.5"></i> + Card
+                                </button>
+
+                                ${mode === 'read' ? `
+                                    <button type="button" id="note-switch-edit-btn" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold flex items-center gap-1">
+                                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                                    </button>
+                                ` : `
+                                    <button type="button" id="note-switch-preview-btn" class="px-2.5 py-1.5 rounded-xl bg-[#111318] border border-[#1E222B] text-xs font-bold text-[#8B92A5] hover:text-[#F3F4F6]">
+                                        Preview
+                                    </button>
+                                    <button type="button" id="note-save-done-btn" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold">
+                                        Save
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+
+                        ${mode === 'read' ? `
+                            <div class="flex-1 overflow-y-auto obsidian-scroll p-5 space-y-4">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold ${badgeCls}">${escapeHtml(draftCategory)}</span>
+                                    ${existing ? `
+                                        <button type="button" id="note-delete-trigger" class="p-1.5 rounded-lg text-[#8B92A5] hover:text-rose-400 transition" title="Delete Note">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                                <h1 class="text-lg font-extrabold text-[#F3F4F6] leading-snug">${escapeHtml(draftTitle || 'Untitled Note')}</h1>
+                                <div class="pt-2 border-t border-[#1E222B]">
+                                    ${renderFormattedNoteHtml(draftContent)}
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="px-4 py-2 bg-[#111318] border-b border-[#1E222B] flex items-center justify-between gap-2 shrink-0">
+                                <div class="flex items-center gap-1.5">
+                                    ${['Cours', 'TD', 'TP'].map(cat => `
+                                        <button type="button" data-ncat="${cat}" class="ncat-pill px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                                            draftCategory === cat
+                                                ? NOTE_TYPE_BADGES[cat]
+                                                : 'text-[#8B92A5] hover:text-[#F3F4F6]'
+                                        }">${cat}</button>
+                                    `).join('')}
+                                </div>
+                                ${existing ? `
+                                    <button type="button" id="note-delete-trigger" class="p-1.5 rounded-lg text-[#8B92A5] hover:text-rose-400" title="Delete Note">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+
+                            <div class="px-4 py-2 bg-[#0D0F14] border-b border-[#1E222B] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+                                <button type="button" data-ins="heading" class="ins-btn px-2.5 py-1 rounded-lg bg-[#111318] border border-[#1E222B] text-[11px] font-semibold text-[#F3F4F6] whitespace-nowrap">Heading</button>
+                                <button type="button" data-ins="bullet" class="ins-btn px-2.5 py-1 rounded-lg bg-[#111318] border border-[#1E222B] text-[11px] font-semibold text-[#F3F4F6] whitespace-nowrap">• Bullet</button>
+                                <button type="button" data-ins="code" class="ins-btn px-2.5 py-1 rounded-lg bg-[#111318] border border-[#1E222B] text-[11px] font-mono text-emerald-400 whitespace-nowrap">&lt;/&gt; Code/CLI</button>
+                                <button type="button" data-ins="formula" class="ins-btn px-2.5 py-1 rounded-lg bg-[#111318] border border-[#1E222B] text-[11px] font-mono text-sky-400 whitespace-nowrap">ƒx Formula</button>
+                                <button type="button" data-ins="trick" class="ins-btn px-2.5 py-1 rounded-lg bg-[#111318] border border-[#1E222B] text-[11px] font-semibold text-amber-400 whitespace-nowrap">⚡ Exam Trick</button>
+                            </div>
+
+                            <div class="flex-1 flex flex-col p-5 overflow-y-auto">
+                                <input
+                                    id="editor-title-field"
+                                    type="text"
+                                    value="${escapeHtml(draftTitle)}"
+                                    placeholder="Lecture or Lab Title..."
+                                    class="w-full text-lg font-extrabold text-[#F3F4F6] bg-transparent placeholder-[#8B92A5]/60 focus:outline-none mb-3"
+                                />
+                                <textarea
+                                    id="editor-body-field"
+                                    placeholder="Write clean notes, commands, formulas, or exam tricks..."
+                                    class="w-full flex-1 text-xs font-mono text-[#E5E7EB] bg-transparent placeholder-[#8B92A5]/50 focus:outline-none resize-none leading-relaxed"
+                                >${escapeHtml(draftContent)}</textarea>
+                            </div>
+                        `}
+                    </div>
+                `);
+
+                document.getElementById('note-make-fc-btn').onclick = () => {
+                    if (mode === 'edit') {
+                        draftTitle = document.getElementById('editor-title-field').value;
+                        draftContent = document.getElementById('editor-body-field').value;
+                    }
+                    const selectedText = window.getSelection ? window.getSelection().toString().trim() : '';
+                    openFlashcardCreatorModal({
+                        moduleId: targetModuleId,
+                        prefillFront: selectedText || (draftTitle ? `Expliquez : ${draftTitle}` : ''),
+                        prefillBack: selectedText ? '' : draftContent.slice(0, 240)
+                    });
+                };
+
+                const delBtn = document.getElementById('note-delete-trigger');
+                if (delBtn && existing) {
+                    delBtn.onclick = () => {
+                        confirmAction({
+                            title: 'Delete Note?',
+                            message: `Permanently delete "${existing.title}"?`,
+                            onConfirm: async () => {
+                                await deleteDocItem('notes', existing.id);
+                                showToast('Note deleted', 'rose');
+                            }
+                        });
+                    };
+                }
+
+                if (mode === 'read') {
+                    document.getElementById('note-switch-edit-btn').onclick = () => {
+                        mode = 'edit';
+                        renderNoteOverlay();
+                    };
+                } else {
+                    const titleInput = document.getElementById('editor-title-field');
+                    const bodyInput = document.getElementById('editor-body-field');
+
+                    document.querySelectorAll('.ncat-pill').forEach(pill => {
+                        pill.onclick = () => {
+                            draftTitle = titleInput.value;
+                            draftContent = bodyInput.value;
+                            draftCategory = pill.getAttribute('data-ncat');
+                            renderNoteOverlay();
+                        };
+                    });
+
+                    document.querySelectorAll('.ins-btn').forEach(btn => {
+                        btn.onclick = () => {
+                            const kind = btn.getAttribute('data-ins');
+                            const snippets = {
+                                heading: '\n## Section Title\n',
+                                bullet: '\n• ',
+                                code: '\n```bash\n# command here\n```\n',
+                                formula: '\n[[formula: x = (-b ± √(b² - 4ac)) / 2a]]\n',
+                                trick: '\n[[trick: Key exam trap or shortcut to remember!]]\n'
+                            };
+                            const insertText = snippets[kind] || '';
+                            const start = bodyInput.selectionStart || bodyInput.value.length;
+                            const end = bodyInput.selectionEnd || bodyInput.value.length;
+                            bodyInput.value = bodyInput.value.slice(0, start) + insertText + bodyInput.value.slice(end);
+                            bodyInput.focus();
+                            bodyInput.selectionStart = bodyInput.selectionEnd = start + insertText.length;
+                            draftContent = bodyInput.value;
+                        };
+                    });
+
+                    document.getElementById('note-switch-preview-btn').onclick = () => {
+                        draftTitle = titleInput.value;
+                        draftContent = bodyInput.value;
+                        mode = 'read';
+                        renderNoteOverlay();
+                    };
+
+                    document.getElementById('note-save-done-btn').onclick = async () => {
+                        const finalTitle = titleInput.value.trim() || 'Untitled Note';
+                        const finalContent = bodyInput.value.trim();
+                        if (!finalContent && !titleInput.value.trim()) {
+                            closeModal();
+                            return;
+                        }
+                        closeModal();
+                        await upsertDoc('notes', {
+                            ...(existing || {}),
+                            moduleId: targetModuleId,
+                            title: finalTitle,
+                            category: draftCategory,
+                            content: finalContent,
+                            updatedAt: Date.now()
+                        });
+                        showToast(existing ? 'Note updated' : 'Note saved', 'emerald');
+                    };
+                }
+            }
+
+            renderNoteOverlay();
+        };
+
+        // ==========================================
+        // 14. MODULE & USER-SCOPED VAULT MODALS
+        // ==========================================
+        window.openModuleModal = function(moduleId = null) {
+            const existing = moduleId ? state.modules.find(m => m.id === moduleId) : null;
+            let selectedAccent = existing?.accent || 'indigo';
+
+            openModal(`
+                <div class="w-full bg-[#111318] rounded-t-[2rem] sm:rounded-3xl sm:m-4 p-5 pb-safe border-t sm:border border-[#1E222B] shadow-2xl animate-sheet-up">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-extrabold text-[#F3F4F6]">${existing ? 'Edit Module' : 'New Engineering Module'}</h3>
+                        <button onclick="closeModal()" class="p-2 rounded-full bg-[#1E222B] text-[#8B92A5]"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+
+                    <form id="mod-form" class="space-y-3.5">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#8B92A5] mb-1">Module Title</label>
+                            <input id="mod-title" type="text" required value="${escapeHtml(existing?.title || '')}" placeholder="e.g., Systèmes d'Exploitation" class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs text-[#F3F4F6] focus:outline-none focus:border-indigo-500" />
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-[#8B92A5] mb-1">Short Code</label>
+                                <input id="mod-code" type="text" value="${escapeHtml(existing?.code || '')}" placeholder="e.g., SYS-301" class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs font-mono text-[#F3F4F6] focus:outline-none focus:border-indigo-500" />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-[#8B92A5] mb-1">Accent Color</label>
+                                <div class="flex items-center gap-2 h-[38px]">
+                                    ${Object.keys(MODULE_ACCENTS).map(k => `
+                                        <button type="button" data-macc="${k}" class="macc-dot w-6 h-6 rounded-full ${MODULE_ACCENTS[k].dot} ${selectedAccent === k ? 'ring-2 ring-offset-2 ring-offset-[#111318] ring-white scale-110' : 'opacity-65'} transition"></button>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#8B92A5] mb-1">Key Topics / Subtitle</label>
+                            <input id="mod-sub" type="text" value="${escapeHtml(existing?.subtitle || '')}" placeholder="e.g., Linux Kernel, Processes, Threads, Pipes" class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs text-[#F3F4F6] focus:outline-none focus:border-indigo-500" />
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-2">
+                            ${existing ? `<button type="button" id="delete-mod-btn" class="px-4 py-3 rounded-xl bg-rose-500/15 text-rose-400 text-xs font-bold">Delete</button>` : ''}
+                            <button type="submit" class="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition">Save Module</button>
+                        </div>
+                    </form>
+                </div>
+            `);
+
+            document.querySelectorAll('.macc-dot').forEach(dot => {
+                dot.onclick = () => {
+                    selectedAccent = dot.getAttribute('data-macc');
+                    document.querySelectorAll('.macc-dot').forEach(d => {
+                        const active = d.getAttribute('data-macc') === selectedAccent;
+                        d.className = `macc-dot w-6 h-6 rounded-full ${MODULE_ACCENTS[d.getAttribute('data-macc')].dot} ${active ? 'ring-2 ring-offset-2 ring-offset-[#111318] ring-white scale-110' : 'opacity-65'} transition`;
+                    });
+                };
+            });
+
+            if (existing) {
+                document.getElementById('delete-mod-btn').onclick = () => {
+                    confirmAction({
+                        title: 'Delete Module?',
+                        message: `Delete "${existing.title}"?`,
+                        onConfirm: async () => {
+                            if (state.selectedModuleId === existing.id) state.selectedModuleId = null;
+                            await deleteDocItem('modules', existing.id);
+                            showToast('Module deleted', 'rose');
+                        }
+                    });
+                };
+            }
+
+            document.getElementById('mod-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const title = document.getElementById('mod-title').value.trim();
+                const code = document.getElementById('mod-code').value.trim().toUpperCase() || 'MOD';
+                const subtitle = document.getElementById('mod-sub').value.trim();
+                if (!title) return;
+                closeModal();
+                await upsertDoc('modules', {
+                    ...(existing || {}),
+                    title,
+                    code,
+                    subtitle,
+                    accent: selectedAccent
+                });
+                showToast(existing ? 'Module updated' : 'Module created', 'emerald');
+            };
+        };
+
+        window.openAddVaultModal = function(moduleId) {
+            if (!state.user) return;
+            const uid = state.user.uid;
+            let vMode = 'file';
+            let pickedFile = null;
+
+            openModal(`
+                <div class="w-full bg-[#111318] rounded-t-[2rem] sm:rounded-3xl sm:m-4 p-5 pb-safe border-t sm:border border-[#1E222B] shadow-2xl animate-sheet-up max-h-[90dvh] overflow-y-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-extrabold text-[#F3F4F6]">Add Subject Resource</h3>
+                        <button onclick="closeModal()" class="p-2 rounded-full bg-[#1E222B] text-[#8B92A5]"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-[#09090B] border border-[#1E222B] mb-4">
+                        <button type="button" data-vm="file" class="vm-tab py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white transition">Upload File</button>
+                        <button type="button" data-vm="link" class="vm-tab py-2 rounded-xl text-xs font-bold text-[#8B92A5] transition">Save Link</button>
+                        <button type="button" data-vm="snippet" class="vm-tab py-2 rounded-xl text-xs font-bold text-[#8B92A5] transition">Snippet</button>
+                    </div>
+
+                    <form id="vault-form" class="space-y-3.5">
+                        <div id="vm-sec-file">
+                            <label class="block p-5 rounded-2xl border border-dashed border-indigo-500/40 bg-indigo-500/5 text-center cursor-pointer hover:bg-indigo-500/10 transition">
+                                <input id="vm-file-input" type="file" accept=".pdf,image/*,.txt,.md,.csv,.json,.c,.cpp,.py,.php,.sql,.js,.html" class="hidden" />
+                                <i data-lucide="file-up" class="w-6 h-6 mx-auto text-indigo-400 mb-1.5"></i>
+                                <p id="vm-file-name" class="text-xs font-bold text-[#F3F4F6]">Tap to choose PDF, Image, or Code file</p>
+                                <p class="text-[10px] text-[#8B92A5] mt-0.5">Stored strictly on-device in studyos_vault_${escapeHtml(uid.slice(0, 8))}...</p>
+                            </label>
+                        </div>
+
+                        <div id="vm-sec-link" class="hidden space-y-3">
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-[#8B92A5] mb-1">Resource URL</label>
+                                <input id="vm-url" type="url" placeholder="https://..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs font-mono text-[#F3F4F6]" />
+                            </div>
+                        </div>
+
+                        <div id="vm-sec-snippet" class="hidden space-y-3">
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-[#8B92A5] mb-1">Command / Formula / Code Snippet</label>
+                                <textarea id="vm-snippet" rows="4" placeholder="Paste CLI command, SQL query, or formula..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs font-mono text-emerald-300"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="col-span-2">
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-[#8B92A5] mb-1">Title</label>
+                                <input id="vm-title" type="text" required placeholder="e.g., TD3 Correction PDF" class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs text-[#F3F4F6]" />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-[#8B92A5] mb-1">Tag</label>
+                                <select id="vm-tag" class="w-full px-2.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs text-[#F3F4F6]">
+                                    <option value="PDF">PDF</option>
+                                    <option value="Docs">Docs</option>
+                                    <option value="Cheat Sheet">Cheat Sheet</option>
+                                    <option value="Video">Video</option>
+                                    <option value="CLI">CLI</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition">Save to Private Vault</button>
+                    </form>
+                </div>
+            `);
+
+            document.querySelectorAll('.vm-tab').forEach(btn => {
+                btn.onclick = () => {
+                    vMode = btn.getAttribute('data-vm');
+                    document.querySelectorAll('.vm-tab').forEach(b => {
+                        const active = b.getAttribute('data-vm') === vMode;
+                        b.className = active
+                            ? 'vm-tab py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white transition'
+                            : 'vm-tab py-2 rounded-xl text-xs font-bold text-[#8B92A5] transition';
+                    });
+                    document.getElementById('vm-sec-file').classList.toggle('hidden', vMode !== 'file');
+                    document.getElementById('vm-sec-link').classList.toggle('hidden', vMode !== 'link');
+                    document.getElementById('vm-sec-snippet').classList.toggle('hidden', vMode !== 'snippet');
+                };
+            });
+
+            document.getElementById('vm-file-input').onchange = (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    pickedFile = {
+                        fileName: file.name,
+                        mimeType: file.type || 'application/octet-stream',
+                        fileSize: file.size,
+                        dataUrl: reader.result
+                    };
+                    document.getElementById('vm-file-name').textContent = `${file.name} (${formatBytes(file.size)})`;
+                    const titleEl = document.getElementById('vm-title');
+                    if (!titleEl.value.trim()) {
+                        titleEl.value = file.name.replace(/\.[^/.]+$/, '');
+                    }
+                };
+                reader.readAsDataURL(file);
+            };
+
+            document.getElementById('vault-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const title = document.getElementById('vm-title').value.trim();
+                const tag = document.getElementById('vm-tag').value;
+                if (!title) return;
+
+                if (vMode === 'file') {
+                    if (!pickedFile) {
+                        showToast('Please select a file first', 'amber');
+                        return;
+                    }
+                    const id = `vlt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+                    state.memoryFileCache[id] = pickedFile.dataUrl;
+                    // Binary files stored strictly on-device in UID-scoped IndexedDB (never uploaded to public storage)
+                    await saveVaultBinary(uid, id, pickedFile.dataUrl);
+
+                    closeModal();
+                    await upsertDoc('vaultItems', {
+                        id,
+                        moduleId,
+                        type: 'file',
+                        title,
+                        tag,
+                        fileName: pickedFile.fileName,
+                        mimeType: pickedFile.mimeType,
+                        fileSize: pickedFile.fileSize,
+                        createdAt: Date.now()
+                    });
+                    showToast('File stored in on-device Vault', 'emerald');
+                } else if (vMode === 'link') {
+                    const url = document.getElementById('vm-url').value.trim();
+                    if (!url) {
+                        showToast('Enter a valid URL', 'amber');
+                        return;
+                    }
+                    closeModal();
+                    await upsertDoc('vaultItems', {
+                        moduleId,
+                        type: 'link',
+                        title,
+                        tag,
+                        url,
+                        createdAt: Date.now()
+                    });
+                    showToast('Link saved to Vault', 'emerald');
+                } else {
+                    const content = document.getElementById('vm-snippet').value.trim();
+                    if (!content) {
+                        showToast('Enter snippet content', 'amber');
+                        return;
+                    }
+                    closeModal();
+                    await upsertDoc('vaultItems', {
+                        moduleId,
+                        type: 'snippet',
+                        title,
+                        tag,
+                        content,
+                        createdAt: Date.now()
+                    });
+                    showToast('Snippet saved to Vault', 'emerald');
+                }
+            };
+        };
+
+        window.openVaultItemViewer = async function(itemId) {
+            if (!state.user) return;
+            const uid = state.user.uid;
+            const item = state.vaultItems.find(v => v.id === itemId);
+            if (!item) return;
+
+            let dataUrl = state.memoryFileCache[item.id] || item.dataUrl || null;
+            if (!dataUrl && item.type === 'file') {
+                dataUrl = await getVaultBinary(uid, item.id);
+                if (dataUrl) state.memoryFileCache[item.id] = dataUrl;
+            }
+
+            let bodyHtml = '';
+            if (item.type === 'file') {
+                if (dataUrl && item.mimeType?.startsWith('image/')) {
+                    bodyHtml = `
+                        <div class="rounded-2xl overflow-hidden bg-[#09090B] border border-[#1E222B] flex items-center justify-center max-h-80">
+                            <img src="${dataUrl}" alt="${escapeHtml(item.title)}" class="max-h-80 w-auto object-contain" />
+                        </div>
+                    `;
+                } else if (dataUrl && item.mimeType === 'application/pdf') {
+                    bodyHtml = `
+                        <div class="rounded-2xl overflow-hidden border border-[#1E222B] h-80 bg-[#09090B]">
+                            <iframe src="${dataUrl}" class="w-full h-full" title="${escapeHtml(item.title)}"></iframe>
+                        </div>
+                    `;
+                } else if (dataUrl && (item.mimeType?.startsWith('text/') || item.fileName?.match(/\.(txt|md|csv|json|c|cpp|py|php|sql|js|html)$/i))) {
+                    let textContent = 'Download file to view contents.';
+                    try {
+                        const b64 = dataUrl.split(',')[1];
+                        if (b64) textContent = atob(b64);
+                    } catch (e) {}
+                    bodyHtml = `
+                        <pre class="p-3.5 rounded-2xl bg-[#09090B] border border-[#1E222B] text-xs font-mono text-emerald-300 max-h-64 overflow-auto whitespace-pre-wrap">${escapeHtml(textContent)}</pre>
+                    `;
+                } else {
+                    bodyHtml = `
+                        <div class="p-6 rounded-2xl bg-[#09090B] border border-[#1E222B] text-center space-y-1.5">
+                            <i data-lucide="file-lock-2" class="w-8 h-8 mx-auto text-indigo-400 mb-1"></i>
+                            <p class="text-xs font-bold text-[#F3F4F6]">${escapeHtml(item.fileName || item.title)}</p>
+                            <p class="text-[11px] font-mono text-[#8B92A5]">${item.fileSize ? formatBytes(item.fileSize) : 'Local File'}</p>
+                            ${!dataUrl ? `<p class="text-[10px] text-amber-400">Binary file is stored on the original upload device.</p>` : ''}
+                        </div>
+                    `;
+                }
+            } else if (item.type === 'link') {
+                bodyHtml = `
+                    <div class="p-3.5 rounded-2xl bg-[#09090B] border border-[#1E222B]">
+                        <p class="text-[10px] font-mono uppercase tracking-wider text-sky-400 mb-1">External URL</p>
+                        <p class="text-xs font-mono text-[#F3F4F6] break-all">${escapeHtml(item.url)}</p>
+                    </div>
+                `;
+            } else {
+                bodyHtml = `
+                    <pre class="p-3.5 rounded-2xl bg-[#09090B] border border-[#1E222B] text-xs font-mono text-emerald-300 max-h-64 overflow-auto whitespace-pre-wrap leading-relaxed">${escapeHtml(item.content)}</pre>
+                `;
+            }
+
+            openModal(`
+                <div class="w-full bg-[#111318] rounded-t-[2rem] sm:rounded-3xl sm:m-4 p-5 pb-safe border-t sm:border border-[#1E222B] shadow-2xl animate-sheet-up max-h-[90dvh] overflow-y-auto">
+                    <div class="flex items-start justify-between gap-2 mb-3">
+                        <div class="min-w-0">
+                            <span class="px-2 py-0.5 rounded-md bg-[#1E222B] text-[10px] font-mono text-sky-400">${escapeHtml(item.tag || item.type)}</span>
+                            <h3 class="text-base font-extrabold text-[#F3F4F6] mt-1.5 leading-snug">${escapeHtml(item.title)}</h3>
+                        </div>
+                        <button onclick="closeModal()" class="p-2 rounded-full bg-[#1E222B] text-[#8B92A5] shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+
+                    ${bodyHtml}
+
+                    <div class="flex items-center gap-2 mt-4">
+                        <button id="vlt-del-btn" class="p-3 rounded-xl bg-rose-500/15 text-rose-400" title="Delete Resource">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+
+                        ${item.type === 'file' && dataUrl ? `
+                            <a href="${dataUrl}" download="${escapeHtml(item.fileName || item.title)}" class="flex-1 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition">
+                                <i data-lucide="download" class="w-4 h-4"></i> Download File
+                            </a>
+                        ` : ''}
+
+                        ${item.type === 'link' ? `
+                            <button onclick="copyTextSafe('${escapeHtml(item.url)}', 'URL copied')" class="py-3 px-3.5 rounded-xl bg-[#1E222B] text-xs font-bold text-[#F3F4F6]">Copy</button>
+                            <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="flex-1 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition">
+                                <i data-lucide="external-link" class="w-4 h-4"></i> Open Resource
+                            </a>
+                        ` : ''}
+
+                        ${item.type === 'snippet' ? `
+                            <button id="vlt-copy-snip-btn" class="flex-1 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition">
+                                <i data-lucide="copy" class="w-4 h-4"></i> Copy Snippet
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `);
+
+            const copySnipBtn = document.getElementById('vlt-copy-snip-btn');
+            if (copySnipBtn) {
+                copySnipBtn.onclick = () => copyTextSafe(item.content || '', 'Snippet copied');
+            }
+
+            document.getElementById('vlt-del-btn').onclick = () => {
+                confirmAction({
+                    title: 'Delete Vault Item?',
+                    message: `Remove "${item.title}" from this subject?`,
+                    onConfirm: async () => {
+                        delete state.memoryFileCache[item.id];
+                        await deleteVaultBinary(uid, item.id);
+                        await deleteDocItem('vaultItems', item.id);
+                        showToast('Item removed', 'rose');
+                    }
+                });
+            };
+        };
+
+        // ==========================================
+        // 15. TAB 2: TASKS (COMPLETELY SEPARATE & ULTRA-SIMPLE)
+        // ==========================================
+        window.setTaskFilter = function(f) {
+            state.taskFilter = f;
+            renderAll();
+        };
+
+        window.setNewTaskModule = function(modId) {
+            state.newTaskModuleId = modId;
+        };
+
+        window.handleQuickAddTask = async function(e) {
+            e.preventDefault();
+            const input = document.getElementById('quick-task-input');
+            if (!input) return;
+            const title = input.value.trim();
+            if (!title) return;
+
+            input.value = '';
+            await upsertDoc('tasks', {
+                title,
+                moduleId: state.newTaskModuleId || 'general',
+                completed: false,
+                createdAt: Date.now()
+            });
+            showToast('Task added', 'indigo');
+        };
+
+        window.toggleSimpleTask = async function(taskId) {
+            const t = state.tasks.find(x => x.id === taskId);
+            if (!t) return;
+            await upsertDoc('tasks', { ...t, completed: !t.completed });
+        };
+
+        window.deleteSimpleTask = async function(taskId) {
+            await deleteDocItem('tasks', taskId);
+            showToast('Task removed', 'rose');
+        };
+
+        window.clearCompletedTasks = async function() {
+            const doneTasks = state.tasks.filter(t => t.completed);
+            for (const t of doneTasks) {
+                await deleteDocItem('tasks', t.id);
+            }
+            showToast('Cleared completed tasks', 'emerald');
+        };
+
+        function renderTasksView() {
+            const activeTasks = state.tasks
+                .filter(t => !t.completed)
+                .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            const doneTasks = state.tasks
+                .filter(t => t.completed)
+                .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            const shownList = state.taskFilter === 'active' ? activeTasks : doneTasks;
+
+            return `
+                <form onsubmit="handleQuickAddTask(event)" class="p-3 rounded-2xl bg-[#111318] border border-[#1E222B] space-y-2.5">
+                    <div class="flex items-center gap-2">
+                        <input
+                            id="quick-task-input"
+                            type="text"
+                            placeholder="Add a task..."
+                            autocomplete="off"
+                            class="flex-1 bg-transparent text-xs text-[#F3F4F6] placeholder-[#8B92A5] focus:outline-none px-1.5 py-1"
+                        />
+                        <button type="submit" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shrink-0 active:scale-95 transition">
+                            Add
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-[#1E222B]/80">
+                        <span class="text-[10px] font-mono uppercase tracking-wider text-[#8B92A5]">Tag:</span>
+                        <select onchange="setNewTaskModule(this.value)" class="bg-[#09090B] border border-[#1E222B] rounded-lg px-2 py-1 text-[11px] font-semibold text-[#F3F4F6] focus:outline-none">
+                            <option value="general" ${state.newTaskModuleId === 'general' ? 'selected' : ''}>General</option>
+                            ${state.modules.map(m => `<option value="${m.id}" ${state.newTaskModuleId === m.id ? 'selected' : ''}>${escapeHtml(m.code || m.title)}</option>`).join('')}
+                        </select>
+                    </div>
+                </form>
+
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="setTaskFilter('active')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition tabular-nums ${
+                            state.taskFilter === 'active'
+                                ? 'bg-[#F3F4F6] text-[#09090B]'
+                                : 'bg-[#111318] border border-[#1E222B] text-[#8B92A5] hover:text-[#F3F4F6]'
+                        }">Active (${activeTasks.length})</button>
+
+                        <button onclick="setTaskFilter('done')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition tabular-nums ${
+                            state.taskFilter === 'done'
+                                ? 'bg-[#F3F4F6] text-[#09090B]'
+                                : 'bg-[#111318] border border-[#1E222B] text-[#8B92A5] hover:text-[#F3F4F6]'
+                        }">Done (${doneTasks.length})</button>
+                    </div>
+
+                    ${doneTasks.length > 0 ? `
+                        <button onclick="clearCompletedTasks()" class="text-[11px] font-semibold text-[#8B92A5] hover:text-rose-400 transition">
+                            Clear completed
+                        </button>
+                    ` : ''}
+                </div>
+
+                ${shownList.length === 0 ? `
+                    <div class="py-14 text-center">
+                        <p class="text-xs font-bold text-[#8B92A5]">
+                            ${state.taskFilter === 'active' ? 'No active tasks — enjoy clear focus.' : 'No completed tasks yet.'}
+                        </p>
+                    </div>
+                ` : `
+                    <div class="space-y-2">
+                        ${shownList.map(task => {
+                            const mod = task.moduleId && task.moduleId !== 'general'
+                                ? state.modules.find(m => m.id === task.moduleId)
+                                : null;
+
+                            return `
+                                <div class="group p-3.5 rounded-2xl bg-[#111318] border border-[#1E222B] flex items-center gap-3 transition">
+                                    <button onclick="toggleSimpleTask('${task.id}')" aria-label="Toggle Task" class="w-5 h-5 rounded-lg border flex items-center justify-center shrink-0 transition ${
+                                        task.completed
+                                            ? 'bg-emerald-500 border-emerald-500 text-[#09090B]'
+                                            : 'border-[#2E3442] hover:border-indigo-400 bg-[#09090B]'
+                                    }">
+                                        ${task.completed ? '<i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>' : ''}
+                                    </button>
+
+                                    <div onclick="toggleSimpleTask('${task.id}')" class="flex-1 min-w-0 cursor-pointer">
+                                        <p class="text-xs font-semibold leading-snug ${task.completed ? 'line-through text-[#8B92A5]' : 'text-[#F3F4F6]'}">
+                                            ${escapeHtml(task.title)}
+                                        </p>
+                                        ${mod ? `<span class="inline-block mt-1 px-1.5 py-0.5 rounded bg-[#1E222B] text-[10px] font-mono text-sky-400">${escapeHtml(mod.code || mod.title)}</span>` : ''}
+                                    </div>
+
+                                    <button onclick="deleteSimpleTask('${task.id}')" aria-label="Delete Task" class="p-1.5 rounded-lg text-[#8B92A5] hover:text-rose-400 transition shrink-0">
+                                        <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `}
+            `;
+        }
+
+        // ==========================================
+        // 16. TAB 3: FOCUS & QUIZ (POMODORO + FLASHCARDS)
+        // ==========================================
+        let pomoIntervalId = null;
+
+        function stopPomodoroInterval() {
+            if (pomoIntervalId) {
+                clearInterval(pomoIntervalId);
+                pomoIntervalId = null;
+            }
+            state.pomoRunning = false;
+        }
+
+        window.switchFocusSubTab = function(sub) {
+            state.focusSubTab = sub;
+            renderAll();
+        };
+
+        window.setPomodoroMode = function(mode) {
+            stopPomodoroInterval();
+            state.pomoMode = mode;
+            state.pomoRemaining = state.pomoDurations[mode];
+            renderAll();
+        };
+
+        window.adjustPomodoroMinutes = function(deltaMins) {
+            if (state.pomoRunning) return;
+            const current = state.pomoDurations[state.pomoMode];
+            const updated = Math.max(60, Math.min(90 * 60, current + deltaMins * 60));
+            state.pomoDurations[state.pomoMode] = updated;
+            state.pomoRemaining = updated;
+            renderAll();
+        };
+
+        window.updatePomodoroIntention = function(val) {
+            state.pomoIntention = val;
+        };
+
+        window.togglePomodoroTimer = function() {
+            if (state.pomoRunning) {
+                stopPomodoroInterval();
+                renderAll();
+                return;
+            }
+
+            state.pomoRunning = true;
+            pomoIntervalId = setInterval(async () => {
+                if (state.pomoRemaining > 1) {
+                    state.pomoRemaining -= 1;
+                    updatePomodoroDomFast();
+                } else {
+                    const completedMode = state.pomoMode;
+                    stopPomodoroInterval();
+                    state.pomoRemaining = state.pomoDurations[completedMode];
+                    playCompletionChime();
+
+                    if (completedMode === 'focus') {
+                        state.completedSessionsToday += 1;
+                        await upsertDoc('stats', {
+                            id: `pom_${getTodayKey()}`,
+                            date: getTodayKey(),
+                            sessions: state.completedSessionsToday
+                        });
+                        showToast('Focus session complete!', 'emerald');
+                    } else {
+                        showToast('Break finished — ready to focus', 'indigo');
+                    }
+                    renderAll();
+                }
+            }, 1000);
+
+            renderAll();
+        };
+
+        window.resetPomodoroTimer = function() {
+            stopPomodoroInterval();
+            state.pomoRemaining = state.pomoDurations[state.pomoMode];
+            renderAll();
+        };
+
+        function formatClock(totalSec) {
+            const mins = Math.floor(totalSec / 60);
+            const secs = totalSec % 60;
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function updatePomodoroDomFast() {
+            const timeEl = document.getElementById('pomo-time-readout');
+            const ringEl = document.getElementById('pomo-progress-circle');
+            if (timeEl) timeEl.textContent = formatClock(state.pomoRemaining);
+            if (ringEl) {
+                const total = state.pomoDurations[state.pomoMode] || 1;
+                const radius = 88;
+                const circumference = 2 * Math.PI * radius;
+                const progress = Math.max(0, Math.min(1, state.pomoRemaining / total));
+                ringEl.style.strokeDashoffset = String(circumference * (1 - progress));
+            }
+        }
+
+        // --- Flashcards & Self-Quiz Actions ---
+        window.setFcModuleFilter = function(modId) {
+            state.fcModuleFilter = modId;
+            state.fcIndex = 0;
+            state.fcFlipped = false;
+            if (state.fcMode === 'quiz') {
+                startFlashcardQuiz();
+                return;
+            }
+            renderAll();
+        };
+
+        window.flipBrowseCard = function() {
+            state.fcFlipped = !state.fcFlipped;
+            const inner = document.getElementById('browse-flip-inner');
+            if (inner) inner.classList.toggle('is-flipped', state.fcFlipped);
+        };
+
+        window.stepBrowseCard = function(delta, deckLen) {
+            if (deckLen <= 0) return;
+            state.fcFlipped = false;
+            state.fcIndex = (state.fcIndex + delta + deckLen) % deckLen;
+            renderAll();
+        };
+
+        window.startFlashcardQuiz = function(customDeck = null) {
+            const baseDeck = customDeck || getFilteredFlashcards();
+            if (baseDeck.length === 0) {
+                showToast('Add flashcards first to start a quiz', 'amber');
+                return;
+            }
+            const shuffled = [...baseDeck].sort(() => Math.random() - 0.5);
+            state.fcMode = 'quiz';
+            state.quizDeck = shuffled;
+            state.quizIndex = 0;
+            state.quizRevealed = false;
+            state.quizGotItIds = [];
+            state.quizMissedIds = [];
+            state.quizFinished = false;
+            renderAll();
+        };
+
+        window.exitFlashcardQuiz = function() {
+            state.fcMode = 'browse';
+            state.fcFlipped = false;
+            renderAll();
+        };
+
+        window.revealQuizCard = function() {
+            state.quizRevealed = true;
+            renderAll();
+        };
+
+        window.gradeQuizCard = function(gotIt) {
+            const currentCard = state.quizDeck[state.quizIndex];
+            if (!currentCard) return;
+            if (gotIt) {
+                state.quizGotItIds.push(currentCard.id);
+            } else {
+                state.quizMissedIds.push(currentCard.id);
+            }
+
+            if (state.quizIndex + 1 < state.quizDeck.length) {
+                state.quizIndex += 1;
+                state.quizRevealed = false;
+            } else {
+                state.quizFinished = true;
+            }
+            renderAll();
+        };
+
+        window.retryMissedQuizCards = function() {
+            const missedDeck = state.flashcards.filter(c => state.quizMissedIds.includes(c.id));
+            if (missedDeck.length > 0) {
+                startFlashcardQuiz(missedDeck);
+            }
+        };
+
+        window.deleteFlashcardItem = function(cardId) {
+            confirmAction({
+                title: 'Delete Flashcard?',
+                message: 'Remove this card from your study deck?',
+                onConfirm: async () => {
+                    await deleteDocItem('flashcards', cardId);
+                    state.fcIndex = 0;
+                    state.fcFlipped = false;
+                    showToast('Flashcard deleted', 'rose');
+                }
+            });
+        };
+
+        window.openFlashcardCreatorModal = function({ moduleId = null, prefillFront = '', prefillBack = '' } = {}) {
+            const defaultMod = moduleId || (state.fcModuleFilter !== 'all' ? state.fcModuleFilter : (state.modules[0]?.id || 'mod_net'));
+
+            openModal(`
+                <div class="w-full bg-[#111318] rounded-t-[2rem] sm:rounded-3xl sm:m-4 p-5 pb-safe border-t sm:border border-[#1E222B] shadow-2xl animate-sheet-up">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-extrabold text-[#F3F4F6]">New Study Flashcard</h3>
+                        <button onclick="closeModal()" class="p-2 rounded-full bg-[#1E222B] text-[#8B92A5]"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+
+                    <form id="fc-creator-form" class="space-y-3.5">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#8B92A5] mb-1">Subject / Module</label>
+                            <select id="fc-mod-select" class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs text-[#F3F4F6]">
+                                ${state.modules.map(m => `<option value="${m.id}" ${m.id === defaultMod ? 'selected' : ''}>${escapeHtml(m.code || '')} — ${escapeHtml(m.title)}</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#8B92A5] mb-1">Front (Question / Concept)</label>
+                            <textarea id="fc-front-input" rows="2" required placeholder="e.g., Quelle est la complexité temporelle du tri rapide en moyenne ?" class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs text-[#F3F4F6] focus:outline-none focus:border-indigo-500">${escapeHtml(prefillFront)}</textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#8B92A5] mb-1">Back (Answer / Formula / Command)</label>
+                            <textarea id="fc-back-input" rows="3" required placeholder="e.g., O(n log n) en moyenne, O(n²) dans le pire cas." class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs font-mono text-sky-300 focus:outline-none focus:border-indigo-500">${escapeHtml(prefillBack)}</textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition">Save Flashcard</button>
+                    </form>
+                </div>
+            `);
+
+            document.getElementById('fc-creator-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const selectedMod = document.getElementById('fc-mod-select').value;
+                const front = document.getElementById('fc-front-input').value.trim();
+                const back = document.getElementById('fc-back-input').value.trim();
+                if (!front || !back) return;
+                closeModal();
+                await upsertDoc('flashcards', {
+                    moduleId: selectedMod,
+                    front,
+                    back
+                });
+                showToast('Flashcard added to deck', 'emerald');
+            };
+        };
+
+        function getFilteredFlashcards() {
+            if (state.fcModuleFilter === 'all') return state.flashcards;
+            return state.flashcards.filter(c => c.moduleId === state.fcModuleFilter);
+        }
+
+        function renderFocusAndQuizView() {
+            let html = `
+                <div class="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-[#111318] border border-[#1E222B]">
+                    <button onclick="switchFocusSubTab('pomodoro')" class="py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                        state.focusSubTab === 'pomodoro'
+                            ? 'bg-indigo-600 text-white shadow-xs'
+                            : 'text-[#8B92A5] hover:text-[#F3F4F6]'
+                    }">
+                        <i data-lucide="timer" class="w-3.5 h-3.5"></i>
+                        <span>Pomodoro Timer</span>
+                    </button>
+
+                    <button onclick="switchFocusSubTab('flashcards')" class="py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                        state.focusSubTab === 'flashcards'
+                            ? 'bg-indigo-600 text-white shadow-xs'
+                            : 'text-[#8B92A5] hover:text-[#F3F4F6]'
+                    }">
+                        <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                        <span>Flashcards (${state.flashcards.length})</span>
+                    </button>
+                </div>
+            `;
+
+            if (state.focusSubTab === 'pomodoro') {
+                const total = state.pomoDurations[state.pomoMode] || 1;
+                const radius = 88;
+                const circumference = 2 * Math.PI * radius;
+                const progress = Math.max(0, Math.min(1, state.pomoRemaining / total));
+                const dashOffset = circumference * (1 - progress);
+                const ringColor = state.pomoMode === 'focus' ? '#6366F1' : '#38BDF8';
+
+                html += `
+                    <div class="p-5 rounded-3xl bg-[#111318] border border-[#1E222B] space-y-5">
+                        <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-[#09090B] border border-[#1E222B]">
+                            ${[
+                                { id: 'focus', label: 'Focus 25m' },
+                                { id: 'short', label: 'Short 5m' },
+                                { id: 'long', label: 'Long 15m' }
+                            ].map(m => `
+                                <button onclick="setPomodoroMode('${m.id}')" class="py-1.5 rounded-lg text-[11px] font-bold transition ${
+                                    state.pomoMode === m.id
+                                        ? 'bg-[#1E222B] text-[#F3F4F6]'
+                                        : 'text-[#8B92A5] hover:text-[#F3F4F6]'
+                                }">${m.label}</button>
+                            `).join('')}
+                        </div>
+
+                        <div class="relative w-52 h-52 mx-auto flex items-center justify-center">
+                            <svg class="w-full h-full -rotate-90" viewBox="0 0 200 200">
+                                <circle cx="100" cy="100" r="${radius}" stroke="#1E222B" stroke-width="8" fill="none" />
+                                <circle
+                                    id="pomo-progress-circle"
+                                    cx="100"
+                                    cy="100"
+                                    r="${radius}"
+                                    stroke="${ringColor}"
+                                    stroke-width="8"
+                                    stroke-linecap="round"
+                                    fill="none"
+                                    stroke-dasharray="${circumference}"
+                                    stroke-dashoffset="${dashOffset}"
+                                    style="transition: stroke-dashoffset 0.35s linear;"
+                                />
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span class="text-[10px] font-mono uppercase tracking-widest text-[#8B92A5]">
+                                    ${state.pomoMode === 'focus' ? 'Deep Focus' : 'Recovery Break'}
+                                </span>
+                                <span id="pomo-time-readout" class="text-4xl font-mono font-extrabold text-[#F3F4F6] tabular-nums mt-1">
+                                    ${formatClock(state.pomoRemaining)}
+                                </span>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <button onclick="adjustPomodoroMinutes(-5)" ${state.pomoRunning ? 'disabled' : ''} class="px-2 py-0.5 rounded bg-[#09090B] border border-[#1E222B] text-[10px] font-mono text-[#8B92A5] hover:text-[#F3F4F6] disabled:opacity-40">-5m</button>
+                                    <button onclick="adjustPomodoroMinutes(5)" ${state.pomoRunning ? 'disabled' : ''} class="px-2 py-0.5 rounded bg-[#09090B] border border-[#1E222B] text-[10px] font-mono text-[#8B92A5] hover:text-[#F3F4F6] disabled:opacity-40">+5m</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <input
+                                type="text"
+                                value="${escapeHtml(state.pomoIntention)}"
+                                oninput="updatePomodoroIntention(this.value)"
+                                placeholder="Current focus goal (e.g., Réviser chapitre VLAN)..."
+                                class="w-full px-3.5 py-2.5 rounded-xl bg-[#09090B] border border-[#1E222B] text-xs text-center text-[#F3F4F6] placeholder-[#8B92A5] focus:outline-none focus:border-indigo-500"
+                            />
+                        </div>
+
+                        <div class="flex items-center gap-2.5">
+                            <button onclick="togglePomodoroTimer()" class="flex-1 py-3 rounded-2xl ${state.pomoRunning ? 'bg-amber-500 text-[#09090B]' : 'bg-indigo-600 hover:bg-indigo-500 text-white'} text-xs font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95">
+                                <i data-lucide="${state.pomoRunning ? 'pause' : 'play'}" class="w-4 h-4"></i>
+                                <span>${state.pomoRunning ? 'Pause' : 'Start Focus'}</span>
+                            </button>
+                            <button onclick="resetPomodoroTimer()" aria-label="Reset Timer" class="p-3 rounded-2xl bg-[#09090B] border border-[#1E222B] text-[#8B92A5] hover:text-[#F3F4F6] active:scale-95 transition">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-[#111318] border border-[#1E222B] flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                <i data-lucide="flame" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-[#F3F4F6]">Today's Completed Sessions</p>
+                                <p class="text-[10px] text-[#8B92A5]">25-minute deep study blocks</p>
+                            </div>
+                        </div>
+                        <span class="text-lg font-mono font-extrabold text-emerald-400 tabular-nums">${state.completedSessionsToday}</span>
+                    </div>
+                `;
+            } else {
+                const deck = getFilteredFlashcards();
+
+                html += `
+                    <div class="flex items-center justify-between gap-2">
+                        <select onchange="setFcModuleFilter(this.value)" class="flex-1 px-3 py-2 rounded-xl bg-[#111318] border border-[#1E222B] text-xs font-semibold text-[#F3F4F6] focus:outline-none">
+                            <option value="all" ${state.fcModuleFilter === 'all' ? 'selected' : ''}>All Modules (${state.flashcards.length})</option>
+                            ${state.modules.map(m => {
+                                const cnt = state.flashcards.filter(c => c.moduleId === m.id).length;
+                                return `<option value="${m.id}" ${state.fcModuleFilter === m.id ? 'selected' : ''}>${escapeHtml(m.code || '')} — ${escapeHtml(m.title)} (${cnt})</option>`;
+                            }).join('')}
+                        </select>
+
+                        <button onclick="openFlashcardCreatorModal()" class="px-3 py-2 rounded-xl bg-[#111318] border border-[#1E222B] hover:border-indigo-500/40 text-xs font-bold text-[#F3F4F6] flex items-center gap-1 shrink-0">
+                            <i data-lucide="plus" class="w-3.5 h-3.5 text-indigo-400"></i> Card
+                        </button>
+                    </div>
+                `;
+
+                if (state.fcMode === 'quiz') {
+                    if (state.quizFinished) {
+                        const totalQ = state.quizDeck.length;
+                        const gotCount = state.quizGotItIds.length;
+                        const missedCount = state.quizMissedIds.length;
+                        const pct = totalQ > 0 ? Math.round((gotCount / totalQ) * 100) : 0;
+
+                        html += `
+                            <div class="p-6 rounded-3xl bg-[#111318] border border-[#1E222B] text-center space-y-4">
+                                <div class="w-12 h-12 mx-auto rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                                    <i data-lucide="award" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-extrabold text-[#F3F4F6]">Self-Quiz Complete</h3>
+                                    <p class="text-xs text-[#8B92A5] mt-1">Active Recall Score: <strong class="text-emerald-400 font-mono">${gotCount}/${totalQ} (${pct}%)</strong></p>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2.5 pt-2">
+                                    ${missedCount > 0 ? `
+                                        <button onclick="retryMissedQuizCards()" class="py-3 px-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold">
+                                            Retry Missed (${missedCount})
+                                        </button>
+                                    ` : `
+                                        <button onclick="startFlashcardQuiz()" class="py-3 px-3 rounded-xl bg-indigo-600 text-white text-xs font-bold">
+                                            Quiz Again
+                                        </button>
+                                    `}
+                                    <button onclick="exitFlashcardQuiz()" class="py-3 px-3 rounded-xl bg-[#1E222B] text-xs font-bold text-[#F3F4F6]">
+                                        Back to Deck
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        const qCard = state.quizDeck[state.quizIndex];
+                        const qMod = state.modules.find(m => m.id === qCard?.moduleId);
+
+                        html += `
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-mono text-[#8B92A5] tabular-nums">Question ${state.quizIndex + 1} / ${state.quizDeck.length}</span>
+                                    <button onclick="exitFlashcardQuiz()" class="text-[#8B92A5] hover:text-[#F3F4F6] font-semibold">Exit Quiz</button>
+                                </div>
+
+                                <div class="p-5 rounded-3xl bg-[#111318] border border-[#1E222B] min-h-[250px] flex flex-col justify-between space-y-4">
+                                    <div>
+                                        <span class="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-400 text-[10px] font-mono font-bold">${escapeHtml(qMod?.code || 'CARD')}</span>
+                                        <h4 class="text-sm font-extrabold text-[#F3F4F6] mt-3 leading-relaxed">${escapeHtml(qCard?.front || '')}</h4>
+                                    </div>
+
+                                    ${state.quizRevealed ? `
+                                        <div class="pt-3 border-t border-[#1E222B] space-y-4">
+                                            <p class="text-xs font-mono text-sky-300 whitespace-pre-line leading-relaxed">${escapeHtml(qCard?.back || '')}</p>
+                                            <div class="grid grid-cols-2 gap-2.5">
+                                                <button onclick="gradeQuizCard(false)" class="py-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold active:scale-95 transition">
+                                                    Needs Review
+                                                </button>
+                                                <button onclick="gradeQuizCard(true)" class="py-3 rounded-xl bg-emerald-600 text-white text-xs font-bold active:scale-95 transition">
+                                                    Got It
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ` : `
+                                        <button onclick="revealQuizCard()" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition active:scale-95">
+                                            Reveal Answer
+                                        </button>
+                                    `}
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    if (deck.length === 0) {
+                        html += `
+                            <div class="p-6 rounded-3xl bg-[#111318] border border-dashed border-[#1E222B] text-center">
+                                <p class="text-xs font-bold text-[#F3F4F6]">No flashcards in this filter</p>
+                                <p class="text-[11px] text-[#8B92A5] mt-1">Tap "+ Card" above or "+ Card" inside any note to create flashcards.</p>
+                            </div>
+                        `;
+                    } else {
+                        const safeIdx = state.fcIndex % deck.length;
+                        const card = deck[safeIdx];
+                        const cMod = state.modules.find(m => m.id === card.moduleId);
+
+                        html += `
+                            <div class="flex items-center justify-between">
+                                <span class="text-[11px] font-mono text-[#8B92A5] tabular-nums">Card ${safeIdx + 1} of ${deck.length}</span>
+                                <button onclick="startFlashcardQuiz()" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 active:scale-95 transition">
+                                    <i data-lucide="zap" class="w-3.5 h-3.5"></i> Start Self-Quiz
+                                </button>
+                            </div>
+
+                            <div onclick="flipBrowseCard()" class="perspective-1000 h-64 cursor-pointer select-none">
+                                <div id="browse-flip-inner" class="flip-card-inner ${state.fcFlipped ? 'is-flipped' : ''}">
+                                    <div class="flip-card-face p-5 rounded-3xl bg-[#111318] border border-[#1E222B] flex flex-col justify-between">
+                                        <div class="flex items-center justify-between">
+                                            <span class="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-400 text-[10px] font-mono font-bold">${escapeHtml(cMod?.code || 'MOD')}</span>
+                                            <button onclick="event.stopPropagation(); deleteFlashcardItem('${card.id}')" class="p-1 text-[#8B92A5] hover:text-rose-400" title="Delete Card">
+                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                        <p class="text-sm font-extrabold text-[#F3F4F6] text-center leading-relaxed my-auto px-2">${escapeHtml(card.front)}</p>
+                                        <p class="text-[10px] font-mono text-center text-[#8B92A5]">Tap card to flip</p>
+                                    </div>
+
+                                    <div class="flip-card-face flip-card-back p-5 rounded-3xl bg-[#161922] border border-indigo-500/35 flex flex-col justify-between">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-[10px] font-mono uppercase tracking-wider text-sky-400 font-bold">Answer</span>
+                                            <span class="text-[10px] font-mono text-[#8B92A5]">Tap to flip back</span>
+                                        </div>
+                                        <p class="text-xs font-mono text-[#F3F4F6] whitespace-pre-line leading-relaxed my-auto overflow-y-auto obsidian-scroll max-h-40">${escapeHtml(card.back)}</p>
+                                        <div></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2.5">
+                                <button onclick="stepBrowseCard(-1, ${deck.length})" class="py-2.5 rounded-xl bg-[#111318] border border-[#1E222B] hover:border-indigo-500/40 text-xs font-bold text-[#F3F4F6] flex items-center justify-center gap-1 active:scale-95 transition">
+                                    <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
+                                </button>
+                                <button onclick="stepBrowseCard(1, ${deck.length})" class="py-2.5 rounded-xl bg-[#111318] border border-[#1E222B] hover:border-indigo-500/40 text-xs font-bold text-[#F3F4F6] flex items-center justify-center gap-1 active:scale-95 transition">
+                                    Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            return html;
+        }
+
+        // ==========================================
+        // 17. BOOTSTRAP APPLICATION ON PRIVACY GATE
+        // ==========================================
+        renderScreenLayers();
+        initFirebaseSubsystem();
+    </script>
+</body>
+</html>
